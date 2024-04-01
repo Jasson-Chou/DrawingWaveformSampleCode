@@ -48,6 +48,10 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ColorProperties.cs" />
+    <Compile Include="CycleResult.cs" />
+    <Compile Include="PinProperties.cs" />
+    <Compile Include="WaveformLinePropties.cs" />
     <Compile Include="WaveformViewControl.cs" />
     <Page Include="UserControl1.xaml">
       <Generator>MSBuild:Compile</Generator>
