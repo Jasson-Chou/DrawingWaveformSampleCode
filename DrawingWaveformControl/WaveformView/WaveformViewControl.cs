@@ -17,6 +17,14 @@ namespace WaveformView
             
         }
 
+        private bool _mouseEnter = false;
+
+        private bool _mouseLeftBtnDown = false;
+
+        private bool _mouseRightBtnDown = false;
+
+        private Point _mouseLocation;
+
         private double hornizontalValue;
         public double HornizontalValue 
         {
@@ -122,12 +130,6 @@ namespace WaveformView
             this.InvalidateVisual();
         }
 
-        private bool _mouseEnter = false;
-
-        private bool _mouseLeftBtnDown = false;
-
-        private bool _mouseRightBtnDown = false;
-
-        private Point _mouseLocation;
+        
     }
 }
