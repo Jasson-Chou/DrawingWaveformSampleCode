@@ -12,9 +12,36 @@ namespace WaveformView
 {
     public class WaveformViewControl : Control
     {
-        internal WaveformViewControl() 
-        { 
-            
+        public WaveformViewControl() 
+        {
+            ColorProperties = new ColorProperties();
+
+
+            CyclePropertyItemsSource = new List<CycleProperties>()
+            {
+                new CycleProperties(10), new CycleProperties(20),
+            };
+
+            PinPropertyItemsSource = new List<PinProperties>()
+            {
+                new PinProperties("pin0", 1, CyclePropertyItemsSource.Count, 3.3, -1.2),
+            };
+
+            WaveformLinePropertyItemsSource = new List<WaveformLineProperties>()
+            {
+                new WaveformLineProperties("line1", Colors.Blue),
+            };
+
+            var pin0 = PinPropertyItemsSource[0];
+
+            for(int cycleIndex = 0; cycleIndex < CyclePropertyItemsSource.Count; cycleIndex++)
+            {
+                int pointSize = CyclePropertyItemsSource[cycleIndex].PointSize;
+                for (int pointIndex = 0; pointIndex < pointSize; pointIndex++) 
+                {
+                    pin0[0, cycleIndex][pointIndex] = (new Random(pointIndex + DateTime.Now.GetHashCode())).NextDouble() * 3.3;
+                }
+            }
         }
 
         private bool _mouseEnter = false;
@@ -46,6 +73,45 @@ namespace WaveformView
                 this.InvalidateVisual();
             }
         }
+
+        public ColorProperties ColorProperties { get; set; }
+
+        public List<CycleProperties> CyclePropertyItemsSource { get; set; }
+
+        public List<PinProperties> PinPropertyItemsSource { get; set; }
+
+        public List<WaveformLineProperties> WaveformLinePropertyItemsSource { get; set; }
+
+        internal Point ActualTopLeft { get; } = new Point(10, 10);
+
+        internal double ActualMW => this.ActualWidth - 20.0d;
+        internal double ActualMH => this.ActualHeight - 20.0d;
+
+        internal double LegendHeight => 40.0d;
+
+        internal double CH => 20.0d;
+
+        internal double TH => 20.0d;
+
+        internal double WH => 80d * VerticalScale;
+
+        internal double PixelPerPoint => 4 * HornizontalScale;
+
+        internal double PNW { get; set; } = 50d;
+        internal double VBW { get; set; } = 50d;
+        internal double WW => ActualWidth - PNW - VBW;
+
+        internal double WFTop => ActualTopLeft.Y + LegendHeight + CH;
+
+        internal double WFBottom => WFTop + ActualMH - LegendHeight - CH - TH;
+
+        internal double WFLeft => ActualTopLeft.X + PNW + VBW;
+
+        internal double WFRight => ActualTopLeft.X + ActualMW;
+
+        public double HornizontalScale { get; set; } = 1.0d;
+
+        public double VerticalScale { get; set; } = 1.0d;
 
         protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         {
@@ -120,10 +186,41 @@ namespace WaveformView
             this.InvalidateVisual();
         }
 
-        protected override void OnRender(DrawingContext drawingContext)
+        protected override void OnRender(DrawingContext dc)
         {
-            base.OnRender(drawingContext);
+            base.OnRender(dc);
+            ColorProperties.Update();
+            var gridThickness = 1.0d;
+            var gridPen = new Pen(ColorProperties.GridBrush, gridThickness);
+            gridPen.Freeze();
+            //dc.DrawLine(new Pen(Brushes.Black, 1.0d), new Point(0, 0), new Point(this.ActualWidth, this.ActualHeight));
+
+            // background
+            dc.DrawRectangle(ColorProperties.BackgroundBrush, null, new Rect(0, 0, this.ActualWidth, this.ActualHeight));
+
+
+            // Legend line
+            var legendHeightTop = ActualTopLeft.Y + LegendHeight;
+            dc.DrawLine(gridPen, new Point(ActualTopLeft.X, legendHeightTop), new Point(WFRight, legendHeightTop));
+
+            // WF Top
+            dc.DrawLine(gridPen, new Point(ActualTopLeft.X, WFTop), new Point(WFRight, WFTop));
+
+            // WF Bottom
+            dc.DrawLine(gridPen, new Point(ActualTopLeft.X, WFBottom), new Point(WFRight, WFBottom));
+
+            // Voltage Bar Width
+            dc.DrawLine(gridPen, new Point(WFLeft, WFTop), new Point(WFLeft, WFBottom));
+
+            // Pin Name Width Line
+            dc.DrawLine(gridPen, new Point(ActualTopLeft.X + PNW, WFTop), new Point(ActualTopLeft.X + PNW, WFBottom));
+            
+            // 最外圍方框
+            dc.DrawRectangle(null, gridPen, new Rect(ActualTopLeft, new Size(ActualMW, ActualMH)));
+            
         }
+
+
 
         public void Update()
         {

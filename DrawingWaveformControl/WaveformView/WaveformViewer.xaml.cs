@@ -18,11 +18,19 @@ namespace WaveformView
     /// <summary>
     /// UserControl1.xaml 的互動邏輯
     /// </summary>
-    public partial class UserControl1 : UserControl
+    public partial class WaveformViewer : UserControl
     {
-        public UserControl1()
+
+        public WaveformViewControl WaveformVieweControl { get; private set; }
+
+        public WaveformViewer()
         {
             InitializeComponent();
+        }
+
+        private void UserControl_Initialized(object sender, EventArgs e)
+        {
+            WaveformVieweControl = waveformViewControl;
         }
     }
 }

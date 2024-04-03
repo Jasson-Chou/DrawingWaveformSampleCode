@@ -7,10 +7,10 @@ using System.Windows.Media;
 
 namespace WaveformView
 {
-    public class WaveformLinePropties
+    public class WaveformLineProperties
     {
 
-        public WaveformLinePropties(string name, Color lineColor) 
+        public WaveformLineProperties(string name, Color lineColor) 
         { 
             this.Name = name;
             this.LineColor = lineColor;
