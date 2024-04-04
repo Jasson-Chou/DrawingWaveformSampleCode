@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace WaveformView
 {
@@ -33,5 +34,12 @@ namespace WaveformView
         public double MaxScopeVoltage { get; internal set; }
 
         public double MinScopeVoltage { get; internal set; }
+
+
+        internal int Index { get; set; }
+
+        public bool IsVisible { get; set; } = true;
+
+        internal FormattedText FormattedText { get; set; }
     }
 }

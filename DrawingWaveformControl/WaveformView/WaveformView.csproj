@@ -51,6 +51,7 @@
     <Compile Include="ColorProperties.cs" />
     <Compile Include="CycleProperties.cs" />
     <Compile Include="CycleResult.cs" />
+    <Compile Include="DefaultProperties.cs" />
     <Compile Include="PinProperties.cs" />
     <Compile Include="WaveformLineProperties.cs" />
     <Compile Include="WaveformViewControl.cs" />

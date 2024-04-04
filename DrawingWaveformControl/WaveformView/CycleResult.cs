@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Markup;
 
 namespace WaveformView
 {
@@ -13,7 +14,11 @@ namespace WaveformView
         {
             this.PointSize = pointSize;
             Values = new double[pointSize];
+
+            for(int index = 0; index < pointSize; index++) { Values[index] = double.NaN; }
         }
+
+        internal int Index { get; set; }
 
         public int PointSize { get; }
 

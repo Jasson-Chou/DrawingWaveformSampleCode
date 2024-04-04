@@ -17,6 +17,6 @@ namespace WaveformView
 
         public int PointSize { get; }
 
-        internal int PointAccumulator { get; }
+        internal int PointAccumulator { get; set; }
     }
 }

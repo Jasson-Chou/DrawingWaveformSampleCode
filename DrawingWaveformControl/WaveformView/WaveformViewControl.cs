@@ -10,39 +10,37 @@ using System.Windows.Media;
 
 namespace WaveformView
 {
+
+    internal delegate void OnUpdatedHandler();
+
+    public enum ETimeUnit
+    {
+        S,
+        ms,
+        us,
+        ns,
+        ps,
+        fs,
+        Auto,
+    }
+
+    public enum EVoltageUnit
+    {
+        V,
+        mV,
+        uV,
+        nV,
+        Auto,
+    }
+
     public class WaveformViewControl : Control
     {
         public WaveformViewControl() 
         {
             ColorProperties = new ColorProperties();
-
-
-            CyclePropertyItemsSource = new List<CycleProperties>()
-            {
-                new CycleProperties(10), new CycleProperties(20),
-            };
-
-            PinPropertyItemsSource = new List<PinProperties>()
-            {
-                new PinProperties("pin0", 1, CyclePropertyItemsSource.Count, 3.3, -1.2),
-            };
-
-            WaveformLinePropertyItemsSource = new List<WaveformLineProperties>()
-            {
-                new WaveformLineProperties("line1", Colors.Blue),
-            };
-
-            var pin0 = PinPropertyItemsSource[0];
-
-            for(int cycleIndex = 0; cycleIndex < CyclePropertyItemsSource.Count; cycleIndex++)
-            {
-                int pointSize = CyclePropertyItemsSource[cycleIndex].PointSize;
-                for (int pointIndex = 0; pointIndex < pointSize; pointIndex++) 
-                {
-                    pin0[0, cycleIndex][pointIndex] = (new Random(pointIndex + DateTime.Now.GetHashCode())).NextDouble() * 3.3;
-                }
-            }
         }
+
+        internal event OnUpdatedHandler OnUpdated = null;
 
         private bool _mouseEnter = false;
 
@@ -52,8 +50,15 @@ namespace WaveformView
 
         private Point _mouseLocation;
 
+        public ETimeUnit TimeUnit { get; set; } = ETimeUnit.Auto;
+
+        public EVoltageUnit VoltageUnit { get; set; } = EVoltageUnit.Auto;
+
+        public double TimeResolution { get; set; } = 0.000000001; //Sec
+
+
         private double hornizontalValue;
-        public double HornizontalValue 
+        public double HornizontalScrollValue 
         {
             get => hornizontalValue;
             set
@@ -64,7 +69,7 @@ namespace WaveformView
         }
 
         private double verticalValue;
-        public double VerticalValue 
+        public double VerticalScrollValue 
         {
             get => verticalValue;
             set
@@ -74,13 +79,95 @@ namespace WaveformView
             }
         }
 
+        internal double MaxHornizontalScrollValue { get; private set; }
+
+        internal double MaxVerticalScrollValue { get; private set; }
+
+        internal IEnumerable<PinProperties> ShowingPinPropertyItemsSource
+        {
+            get
+            {
+                if (ShowdowPinPropertyItemsSource is null) yield break;
+
+                int fromIndex = (int)(VerticalScrollValue / WH);
+                int toIndex = (int)((VerticalScrollValue + TWH) / WH);
+
+                for(int i = fromIndex; i <= toIndex && i < ShowdowPinPropertyItemsSource.Count; i++)
+                {
+                    yield return ShowdowPinPropertyItemsSource[i];
+                }
+
+                yield break;
+            }
+        }
+
+        internal IEnumerable<CycleProperties> ShowingCyclePropertyItemsSource
+        {
+            get 
+            {
+                if(CyclePropertyItemsSource is null) yield break;
+
+                int fromIndex = CyclePropertyItemsSource.FirstOrDefault(item => (item.PointAccumulator + item.PointSize) * PixelPerPoint >= HornizontalScrollValue)?.Index ?? -1;
+                int toIndex = CyclePropertyItemsSource.LastOrDefault(item => (item.PointAccumulator + item.PointSize) * PixelPerPoint > HornizontalScrollValue + WW)?.Index ?? -1;
+
+                if(fromIndex == -1) 
+                    yield break;
+
+                for (int i = fromIndex; (i <= toIndex || toIndex == -1) && i < CyclePropertyItemsSource.Count; i++)
+                {
+                    yield return CyclePropertyItemsSource[i];
+                }
+
+                yield break;
+            }
+        }
+
         public ColorProperties ColorProperties { get; set; }
 
-        public List<CycleProperties> CyclePropertyItemsSource { get; set; }
+        public IReadOnlyList<CycleProperties> CyclePropertyItemsSource { get; internal set; }
 
-        public List<PinProperties> PinPropertyItemsSource { get; set; }
+        public IReadOnlyList<PinProperties> PinPropertyItemsSource { get; internal set; }
 
-        public List<WaveformLineProperties> WaveformLinePropertyItemsSource { get; set; }
+        internal IReadOnlyList<PinProperties> ShowdowPinPropertyItemsSource { get; set; }
+
+        public IReadOnlyList<WaveformLineProperties> WaveformLinePropertyItemsSource { get; internal set; }
+
+
+        public void Setup(IReadOnlyList<CycleProperties> CyclePropertyItemsSource, IReadOnlyList<PinProperties> PinPropertyItemsSource, IReadOnlyList<WaveformLineProperties> WaveformLinePropertyItemsSource)
+        {
+            this.CyclePropertyItemsSource = CyclePropertyItemsSource;
+            this.PinPropertyItemsSource = PinPropertyItemsSource;
+            this.WaveformLinePropertyItemsSource = WaveformLinePropertyItemsSource;
+
+            var pointAccumulator = 0;
+
+            for (int i = 0; i < CyclePropertyItemsSource.Count; i++)
+            {
+                var cycleProp = CyclePropertyItemsSource[i];
+                cycleProp.Index = i;
+                cycleProp.PointAccumulator = pointAccumulator;
+                pointAccumulator += cycleProp.PointSize;
+            }
+
+            for (int i = 0; i < PinPropertyItemsSource.Count; i++)
+            {
+                var pin = PinPropertyItemsSource[i];
+
+                pin.Index = i;
+                
+                for(int lineIndex = 0; lineIndex < pin.LineSize; lineIndex++)
+                {
+                    for (int j = 0; j < pin.CycleSize; j++)
+                    {
+                        pin[lineIndex, j].Index = j;
+                    }
+                }
+            }
+
+            TimeUnit = ETimeUnit.Auto;
+
+            VoltageUnit = EVoltageUnit.Auto;
+        }
 
         internal Point ActualTopLeft { get; } = new Point(10, 10);
 
@@ -95,6 +182,8 @@ namespace WaveformView
 
         internal double WH => 80d * VerticalScale;
 
+        internal double MaxMinVoltageScalePadding => 5.0d;
+
         internal double PixelPerPoint => 4 * HornizontalScale;
 
         internal double PNW { get; set; } = 50d;
@@ -104,6 +193,8 @@ namespace WaveformView
         internal double WFTop => ActualTopLeft.Y + LegendHeight + CH;
 
         internal double WFBottom => WFTop + ActualMH - LegendHeight - CH - TH;
+
+        internal double TWH => WFBottom - WFTop;
 
         internal double WFLeft => ActualTopLeft.X + PNW + VBW;
 
@@ -189,7 +280,15 @@ namespace WaveformView
         protected override void OnRender(DrawingContext dc)
         {
             base.OnRender(dc);
-            ColorProperties.Update();
+
+            var cycleProperties = ShowingCyclePropertyItemsSource.ToArray();
+
+            var pinProperties = ShowingPinPropertyItemsSource.ToArray();
+
+            if (cycleProperties.Length == 0) { return; }
+            if(pinProperties.Length == 0) { return; }
+
+
             var gridThickness = 1.0d;
             var gridPen = new Pen(ColorProperties.GridBrush, gridThickness);
             gridPen.Freeze();
@@ -198,6 +297,10 @@ namespace WaveformView
             // background
             dc.DrawRectangle(ColorProperties.BackgroundBrush, null, new Rect(0, 0, this.ActualWidth, this.ActualHeight));
 
+
+            OnRender(dc, pinProperties);
+
+            OnRender(dc, cycleProperties);
 
             // Legend line
             var legendHeightTop = ActualTopLeft.Y + LegendHeight;
@@ -220,13 +323,127 @@ namespace WaveformView
             
         }
 
+        private void OnRender(DrawingContext dc, CycleProperties[] cycleProperties)
+        {
+            foreach(var cycleProp in cycleProperties)
+            {
+                var cycleIndex = cycleProp.Index;
 
+                var cycleLine_PosiX = (cycleProp.PointAccumulator + cycleProp.PointSize) * PixelPerPoint - HornizontalScrollValue + WFLeft;
+
+                if (cycleLine_PosiX < WFLeft || cycleLine_PosiX > WFRight) continue;
+
+                dc.DrawLine(ColorProperties.GridPen, new Point(cycleLine_PosiX, WFTop), new Point(cycleLine_PosiX, WFBottom));
+                
+
+            }
+        }
+
+        private void OnRender(DrawingContext dc, PinProperties[] pinProperties)
+        {
+            var showdowPinPropItems = ShowdowPinPropertyItemsSource.ToList();
+
+            var WH_Half = WH / 2.0d;
+
+            foreach (var pinProp in pinProperties)
+            {
+                var pinIndex = showdowPinPropItems.IndexOf(pinProp);
+
+                var pinTop = WFTop + pinIndex * WH - VerticalScrollValue;
+                var pinBottom = pinTop + WH;
+
+                // pin name drawing
+
+                var formatText = pinProp.FormattedText;
+
+                var textPosiX = ActualTopLeft.X + 2.5d;
+
+                var textPosiY = pinTop + WH_Half - formatText.Height / 2.0d;
+
+                if(textPosiY > WFTop && textPosiY + formatText.Height < WFBottom)
+                {
+                    dc.DrawText(pinProp.FormattedText, new Point(textPosiX, textPosiY));
+                }
+
+                // max/min voltage drawing
+
+                var maxVoltage = pinProp.MaxScopeVoltage;
+                var minVoltage = pinProp.MinScopeVoltage;
+
+                var maxVoltPosiY = pinTop + MaxMinVoltageScalePadding;
+                var minVoltPosiY = pinTop + WH - MaxMinVoltageScalePadding;
+
+                //drawing max min voltage text...
+                if(maxVoltPosiY > WFTop && maxVoltPosiY < WFBottom)
+                {
+                    dc.DrawLine(ColorProperties.MaxMinVoltLinePen, new Point(WFLeft, maxVoltPosiY), new Point(WFRight, maxVoltPosiY));
+                }
+
+                if (minVoltPosiY > WFTop && minVoltPosiY < WFBottom)
+                {
+                    dc.DrawLine(ColorProperties.MaxMinVoltLinePen, new Point(WFLeft, minVoltPosiY), new Point(WFRight, minVoltPosiY));
+
+                }
+
+
+                // pin bottom line drawing
+
+                if (pinBottom > WFTop && pinBottom < WFBottom)
+                {
+                    dc.DrawLine(ColorProperties.GridPen, new Point(ActualTopLeft.X, pinBottom), new Point(WFRight, pinBottom));
+                }
+            }
+        }
 
         public void Update()
         {
+            ColorProperties.Update();
+
+            ShowdowPinPropertyItemsSource = PinPropertyItemsSource.Where(item => item.IsVisible).OrderBy(item => item.Index).ToList();
+
+            var lastCycleProp = CyclePropertyItemsSource?.LastOrDefault();
+
+            MaxHornizontalScrollValue = lastCycleProp is null ? 1 : (lastCycleProp.PointAccumulator + lastCycleProp.PointSize) * PixelPerPoint;
+
+            MaxVerticalScrollValue = ShowdowPinPropertyItemsSource.Count * WH;
+
+            //found max pin name width
+            var maxTextWidth = 10d;
+            for(int pinIndex = 0; pinIndex < ShowdowPinPropertyItemsSource.Count; pinIndex++) 
+            {
+                var pinProp = ShowdowPinPropertyItemsSource[pinIndex];
+                if(pinProp.FormattedText is null)
+                {
+                    pinProp.FormattedText = new FormattedText(
+                    pinProp.Name, // 文字內容
+                    System.Globalization.CultureInfo.CurrentCulture, // 使用當前文化信息
+                    FlowDirection.LeftToRight, // 文字流向
+                    new Typeface("Verdana"), // 字體
+                    DefaultProperties.TextThickness, // 字號
+                    ColorProperties.TextBrush, // 文字顏色
+                    VisualTreeHelper.GetDpi(this).PixelsPerDip); //Render在不同DPI的顯示器上能夠自動調整
+                }
+                else
+                {
+                    pinProp.FormattedText.SetForegroundBrush(ColorProperties.TextBrush);
+                }
+
+                if(maxTextWidth < pinProp.FormattedText.WidthIncludingTrailingWhitespace)
+                {
+                    maxTextWidth = pinProp.FormattedText.WidthIncludingTrailingWhitespace;
+                }
+            }
+
+            PNW = maxTextWidth + 10d;
+
+            RaiseOnUpdated();
+
             this.InvalidateVisual();
         }
 
-        
+        internal void RaiseOnUpdated()
+        {
+            OnUpdated?.Invoke();
+        }
     }
 }

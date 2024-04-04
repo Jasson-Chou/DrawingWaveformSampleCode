@@ -31,6 +31,25 @@ namespace WaveformView
         private void UserControl_Initialized(object sender, EventArgs e)
         {
             WaveformVieweControl = waveformViewControl;
+            WaveformVieweControl.OnUpdated += WaveformVieweControl_OnUpdated;
+        }
+
+        private void WaveformVieweControl_OnUpdated()
+        {
+            hornizontalSB.Maximum = WaveformVieweControl.MaxHornizontalScrollValue;
+            verticalSB.Maximum = WaveformVieweControl.MaxVerticalScrollValue;
+        }
+
+        private void verticalSB_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (waveformViewControl is null) { return; }
+            WaveformVieweControl.VerticalScrollValue= e.NewValue;
+        }
+
+        private void hornizontalSB_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (waveformViewControl is null) { return; }
+            WaveformVieweControl.HornizontalScrollValue= e.NewValue;
         }
     }
 }

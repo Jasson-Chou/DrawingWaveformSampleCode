@@ -8,6 +8,13 @@
         mc:Ignorable="d" Initialized="Window_Initialized"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <waveformView:WaveformViewer x:Name="waveformViewer"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Orientation="Horizontal">
+            <Button x:Name="GenBtn" Content="Gen" Click="GenBtn_Click"/>
+        </StackPanel>
+        <waveformView:WaveformViewer x:Name="waveformViewer" Grid.Row="1"/>
     </Grid>
 </Window>
