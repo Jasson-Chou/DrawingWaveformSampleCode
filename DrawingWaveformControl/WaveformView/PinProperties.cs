@@ -15,6 +15,8 @@ namespace WaveformView
             LineSize = lineSize;
             CycleSize = cycleSize;
             CycleResults = new CycleResult[lineSize, cycleSize];
+            MaxScopeVoltage = maxScopeVoltage;
+            MinScopeVoltage = minScopeVoltage;
         }
 
         public string Name { get; }
@@ -40,6 +42,10 @@ namespace WaveformView
 
         public bool IsVisible { get; set; } = true;
 
-        internal FormattedText FormattedText { get; set; }
+        internal FormattedText NameFormattedText { get; set; }
+
+        internal FormattedText MaxVoltFormattedText { get; set; }
+
+        internal FormattedText MinVoltFormattedText { get; set; }
     }
 }

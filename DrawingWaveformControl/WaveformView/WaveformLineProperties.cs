@@ -23,5 +23,7 @@ namespace WaveformView
         public Color LineColor { get; set; }
 
         public bool IsVisible { get; set; }
+
+        internal Pen LinePen { get; set; }
     }
 }

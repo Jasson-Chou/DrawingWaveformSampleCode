@@ -68,9 +68,10 @@ namespace WaveformViewDemo
                     {
                         var cycleResult = new CycleResult(pointSize);
 
+                        var random = new Random(pinIndex + cycleIndex + lineIndex + DateTime.Now.Millisecond.GetHashCode());
                         for (int pointIndex = 0; pointIndex < pointSize; pointIndex++)
                         {
-                            cycleResult[pointIndex] = (new Random(pointIndex + DateTime.Now.GetHashCode())).NextDouble() * 3.3;
+                            cycleResult[pointIndex] = random.NextDouble() * - 1.2d + random.NextDouble() * 4.5d;
                         }
 
                         pinProp[lineIndex, cycleIndex] = cycleResult;

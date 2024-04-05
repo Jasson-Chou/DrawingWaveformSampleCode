@@ -24,7 +24,7 @@ namespace WaveformView
         Auto,
     }
 
-    public enum EVoltageUnit
+    public enum EVoltUnit
     {
         V,
         mV,
@@ -37,6 +37,19 @@ namespace WaveformView
     {
         public WaveformViewControl() 
         {
+            TimeUnitValues = new Dictionary<ETimeUnit, double>();
+            TimeUnitValues.Add(ETimeUnit.ms, 1e-3);
+            TimeUnitValues.Add(ETimeUnit.us, 1e-6);
+            TimeUnitValues.Add(ETimeUnit.ns, 1e-9);
+            TimeUnitValues.Add(ETimeUnit.fs, 1e-12);
+
+            VoltUnitValues = new Dictionary<EVoltUnit, double>();
+            VoltUnitValues.Add(EVoltUnit.Auto, -1.0d);
+            VoltUnitValues.Add(EVoltUnit.V, 1.0d);
+            VoltUnitValues.Add(EVoltUnit.mV, 1e-3);
+            VoltUnitValues.Add(EVoltUnit.uV, 1e-6);
+            VoltUnitValues.Add(EVoltUnit.nV, 1e-9);
+
             ColorProperties = new ColorProperties();
         }
 
@@ -52,7 +65,7 @@ namespace WaveformView
 
         public ETimeUnit TimeUnit { get; set; } = ETimeUnit.Auto;
 
-        public EVoltageUnit VoltageUnit { get; set; } = EVoltageUnit.Auto;
+        public EVoltUnit VoltUnit { get; set; } = EVoltUnit.Auto;
 
         public double TimeResolution { get; set; } = 0.000000001; //Sec
 
@@ -166,7 +179,7 @@ namespace WaveformView
 
             TimeUnit = ETimeUnit.Auto;
 
-            VoltageUnit = EVoltageUnit.Auto;
+            VoltUnit = EVoltUnit.Auto;
         }
 
         internal Point ActualTopLeft { get; } = new Point(10, 10);
@@ -182,7 +195,9 @@ namespace WaveformView
 
         internal double WH => 80d * VerticalScale;
 
-        internal double MaxMinVoltageScalePadding => 5.0d;
+        internal double MaxMinVoltageScalePadding => 8.0d;
+
+        internal double TextPadding => 5.0d;
 
         internal double PixelPerPoint => 4 * HornizontalScale;
 
@@ -298,7 +313,7 @@ namespace WaveformView
             dc.DrawRectangle(ColorProperties.BackgroundBrush, null, new Rect(0, 0, this.ActualWidth, this.ActualHeight));
 
 
-            OnRender(dc, pinProperties);
+            OnRender(dc, pinProperties, cycleProperties);
 
             OnRender(dc, cycleProperties);
 
@@ -339,7 +354,7 @@ namespace WaveformView
             }
         }
 
-        private void OnRender(DrawingContext dc, PinProperties[] pinProperties)
+        private void OnRender(DrawingContext dc, PinProperties[] pinProperties, CycleProperties[] cycleProperties)
         {
             var showdowPinPropItems = ShowdowPinPropertyItemsSource.ToList();
 
@@ -354,7 +369,7 @@ namespace WaveformView
 
                 // pin name drawing
 
-                var formatText = pinProp.FormattedText;
+                var formatText = pinProp.NameFormattedText;
 
                 var textPosiX = ActualTopLeft.X + 2.5d;
 
@@ -362,7 +377,7 @@ namespace WaveformView
 
                 if(textPosiY > WFTop && textPosiY + formatText.Height < WFBottom)
                 {
-                    dc.DrawText(pinProp.FormattedText, new Point(textPosiX, textPosiY));
+                    dc.DrawText(pinProp.NameFormattedText, new Point(textPosiX, textPosiY));
                 }
 
                 // max/min voltage drawing
@@ -373,18 +388,96 @@ namespace WaveformView
                 var maxVoltPosiY = pinTop + MaxMinVoltageScalePadding;
                 var minVoltPosiY = pinTop + WH - MaxMinVoltageScalePadding;
 
-                //drawing max min voltage text...
-                if(maxVoltPosiY > WFTop && maxVoltPosiY < WFBottom)
+                var maxVoltTextTop = maxVoltPosiY - pinProp.MaxVoltFormattedText.Height / 2;
+                var minVoltTextTop = minVoltPosiY - pinProp.MinVoltFormattedText.Height / 2;
+
+
+                var lineSize = pinProp.LineSize;
+                var cycleSize = pinProp.CycleSize;
+
+
+                for(int lineIndex = 0; lineIndex < lineSize;lineIndex++) 
+                { 
+                    var currPoint = new Point();
+                    var lastPoint = new Point();
+                    // first point of first cycle
+
+                    var firstCycleProp = cycleProperties.FirstOrDefault();
+                    
+                    if(firstCycleProp is null) { continue; }
+
+                    foreach (var cycleProp in cycleProperties)
+                    {
+                        var cycleIndex = cycleProp.Index;
+
+                        var cycleResult = pinProp[lineIndex, cycleIndex];
+
+                        int currPointIndexOfCycle = 0;
+
+                        if (ReferenceEquals(firstCycleProp, cycleProp))
+                        {
+                            currPointIndexOfCycle = (int)((HornizontalScrollValue - firstCycleProp.PointAccumulator * PixelPerPoint) / PixelPerPoint);
+
+                            var voltage = cycleResult[currPointIndexOfCycle];
+
+                            var firstPoint_XPosi = (firstCycleProp.PointAccumulator + currPointIndexOfCycle) * PixelPerPoint + WFLeft - HornizontalScrollValue;
+
+                            var firstPoint_YPosi = VoltageTransPosi(voltage, pinProp.MaxScopeVoltage, pinProp.MinScopeVoltage, pinTop);
+
+                            currPoint.X = firstPoint_XPosi;
+                            currPoint.Y = firstPoint_YPosi;
+
+                            lastPoint = currPoint;
+
+                            currPointIndexOfCycle++;
+                        }
+
+                        for(; currPointIndexOfCycle < cycleProp.PointSize; currPointIndexOfCycle++) 
+                        {
+                            var voltage = cycleResult[currPointIndexOfCycle];
+
+                            var firstPoint_XPosi = (cycleProp.PointAccumulator + currPointIndexOfCycle) * PixelPerPoint + WFLeft - HornizontalScrollValue;
+
+                            var firstPoint_YPosi = VoltageTransPosi(voltage, pinProp.MaxScopeVoltage, pinProp.MinScopeVoltage, pinTop);
+
+                            currPoint.X = firstPoint_XPosi;
+                            currPoint.Y = firstPoint_YPosi;
+
+                            if(lastPoint.X >= WFLeft && lastPoint.X <= WFRight && lastPoint.Y >= WFTop && lastPoint.Y <= WFBottom &&
+                                currPoint.X >= WFLeft && currPoint.X <= WFRight && currPoint.Y >= WFTop && currPoint.Y <= WFBottom)
+                            {
+
+                                //還需要增加曲線不能夠超出最大/最小電壓範圍...
+                                dc.DrawLine(WaveformLinePropertyItemsSource[lineIndex].LinePen, lastPoint, currPoint);
+                            }
+
+                            lastPoint = currPoint;
+                        }
+                    }
+                }
+
+
+
+                //drawing max min voltage text
+                if (maxVoltPosiY > WFTop && maxVoltPosiY < WFBottom)
                 {
                     dc.DrawLine(ColorProperties.MaxMinVoltLinePen, new Point(WFLeft, maxVoltPosiY), new Point(WFRight, maxVoltPosiY));
+                }
+
+                if(maxVoltTextTop > WFTop && maxVoltTextTop < WFBottom)
+                {
+                    dc.DrawText(pinProp.MaxVoltFormattedText, new Point(WFLeft - pinProp.MaxVoltFormattedText.WidthIncludingTrailingWhitespace - TextPadding, maxVoltTextTop));
                 }
 
                 if (minVoltPosiY > WFTop && minVoltPosiY < WFBottom)
                 {
                     dc.DrawLine(ColorProperties.MaxMinVoltLinePen, new Point(WFLeft, minVoltPosiY), new Point(WFRight, minVoltPosiY));
-
                 }
 
+                if (minVoltTextTop > WFTop && minVoltTextTop < WFBottom)
+                {
+                    dc.DrawText(pinProp.MinVoltFormattedText, new Point(WFLeft - pinProp.MinVoltFormattedText.WidthIncludingTrailingWhitespace - TextPadding, minVoltTextTop));
+                }
 
                 // pin bottom line drawing
 
@@ -409,32 +502,70 @@ namespace WaveformView
 
             //found max pin name width
             var maxTextWidth = 10d;
+            var voltTextWidth = 10d;
             for(int pinIndex = 0; pinIndex < ShowdowPinPropertyItemsSource.Count; pinIndex++) 
             {
                 var pinProp = ShowdowPinPropertyItemsSource[pinIndex];
-                if(pinProp.FormattedText is null)
+                if(pinProp.NameFormattedText is null)
                 {
-                    pinProp.FormattedText = new FormattedText(
-                    pinProp.Name, // 文字內容
-                    System.Globalization.CultureInfo.CurrentCulture, // 使用當前文化信息
-                    FlowDirection.LeftToRight, // 文字流向
-                    new Typeface("Verdana"), // 字體
-                    DefaultProperties.TextThickness, // 字號
-                    ColorProperties.TextBrush, // 文字顏色
-                    VisualTreeHelper.GetDpi(this).PixelsPerDip); //Render在不同DPI的顯示器上能夠自動調整
+                    pinProp.NameFormattedText = TransFormattedText(pinProp.Name, ColorProperties.TextBrush); 
                 }
                 else
                 {
-                    pinProp.FormattedText.SetForegroundBrush(ColorProperties.TextBrush);
+                    pinProp.NameFormattedText.SetForegroundBrush(ColorProperties.TextBrush);
                 }
 
-                if(maxTextWidth < pinProp.FormattedText.WidthIncludingTrailingWhitespace)
+                if(maxTextWidth < pinProp.NameFormattedText.WidthIncludingTrailingWhitespace)
                 {
-                    maxTextWidth = pinProp.FormattedText.WidthIncludingTrailingWhitespace;
+                    maxTextWidth = pinProp.NameFormattedText.WidthIncludingTrailingWhitespace;
+                }
+
+                if(pinProp.MaxVoltFormattedText is null)
+                {
+                    var text = VoltageTransText(pinProp.MaxScopeVoltage);
+
+                    pinProp.MaxVoltFormattedText = TransFormattedText(text, ColorProperties.TextBrush);
+                }
+                else
+                {
+                    pinProp.MaxVoltFormattedText.SetForegroundBrush(ColorProperties.TextBrush);
+                }
+
+                if(voltTextWidth < pinProp.MaxVoltFormattedText.WidthIncludingTrailingWhitespace)
+                {
+                    voltTextWidth = pinProp.MaxVoltFormattedText.WidthIncludingTrailingWhitespace;
+                }
+
+                if (pinProp.MinVoltFormattedText is null)
+                {
+                    var text = VoltageTransText(pinProp.MinScopeVoltage);
+
+                    pinProp.MinVoltFormattedText = TransFormattedText(text, ColorProperties.TextBrush);
+                }
+                else
+                {
+                    pinProp.MinVoltFormattedText.SetForegroundBrush(ColorProperties.TextBrush);
+                }
+
+                if (voltTextWidth < pinProp.MinVoltFormattedText.WidthIncludingTrailingWhitespace)
+                {
+                    voltTextWidth = pinProp.MinVoltFormattedText.WidthIncludingTrailingWhitespace;
                 }
             }
 
-            PNW = maxTextWidth + 10d;
+            PNW = maxTextWidth + TextPadding * 2;
+
+            VBW = voltTextWidth + TextPadding * 2;
+
+            foreach(var wflineProp in WaveformLinePropertyItemsSource)
+            {
+                var brush = new SolidColorBrush(wflineProp.LineColor);
+                brush.Freeze();
+
+                wflineProp.LinePen = new Pen(brush, DefaultProperties.LineThickness);
+
+                wflineProp.LinePen.Freeze();
+            }
 
             RaiseOnUpdated();
 
@@ -444,6 +575,62 @@ namespace WaveformView
         internal void RaiseOnUpdated()
         {
             OnUpdated?.Invoke();
+        }
+
+        private Dictionary<EVoltUnit, double> VoltUnitValues { get; }
+
+        private Dictionary<ETimeUnit, double> TimeUnitValues { get; }
+
+        public int VoltUnitDecimals { get; set; } = 2;
+
+        internal string VoltageTransText(double voltage)
+        {
+            if (double.IsNaN(voltage)) return "NaN";
+            if (VoltUnit == EVoltUnit.Auto)
+            {
+                var enumCnt = Enum.GetValues(typeof(EVoltUnit)).Cast<EVoltUnit>().Count();
+                for (int enumIdx = 0; enumIdx < enumCnt - 1; enumIdx++)
+                {
+                    var eVolt = (EVoltUnit)enumIdx;
+                    var unitValue = VoltUnitValues[eVolt];
+                    var divi = voltage / unitValue;
+                    if (divi == 0.0d)
+                    {
+                        return $"{divi} {eVolt.ToString()}";
+                    }
+                    else if ((int)(divi) != 0)
+                    {
+                        return $"{Math.Round(divi, VoltUnitDecimals)} {eVolt.ToString()}";
+                    }
+                }
+                return "error";
+            }
+            else
+            {
+                var unitValue = VoltUnitValues[VoltUnit];
+                var divi = voltage / unitValue;
+                return $"{Math.Round(divi, VoltUnitDecimals)} {VoltUnit.ToString()}";
+            }
+        }
+
+        internal double VoltageTransPosi(double voltage, double maxVolt, double minVolt, double pinTop)
+        {
+            if (double.IsNaN(voltage)) { return double.NaN; }
+            var topToVoltLen = (WH - 2 * MaxMinVoltageScalePadding) * (Math.Abs(maxVolt - voltage) / Math.Abs(maxVolt - minVolt));
+            return pinTop + MaxMinVoltageScalePadding + topToVoltLen;
+        }
+
+        internal FormattedText TransFormattedText(string text, Brush brush, double emSize = DefaultProperties.TextThickness) 
+        {
+            var result = new FormattedText(
+                    text, // 文字內容
+                    System.Globalization.CultureInfo.CurrentCulture, // 使用當前文化信息
+                    FlowDirection.LeftToRight, // 文字流向
+                    new Typeface("Verdana"), // 字體
+                    emSize, // 字號
+                    brush, // 文字顏色
+                    VisualTreeHelper.GetDpi(this).PixelsPerDip); //Render在不同DPI的顯示器上能夠自動調整
+            return result;
         }
     }
 }
