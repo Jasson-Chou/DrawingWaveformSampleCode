@@ -16,12 +16,11 @@ namespace WaveformView
     public enum ETimeUnit
     {
         S,
-        ms,
-        us,
-        ns,
+        mS,
+        uS,
+        nS,
         ps,
-        fs,
-        Auto,
+        fS,
     }
 
     public enum EVoltUnit
@@ -38,10 +37,11 @@ namespace WaveformView
         public WaveformViewControl() 
         {
             TimeUnitValues = new Dictionary<ETimeUnit, double>();
-            TimeUnitValues.Add(ETimeUnit.ms, 1e-3);
-            TimeUnitValues.Add(ETimeUnit.us, 1e-6);
-            TimeUnitValues.Add(ETimeUnit.ns, 1e-9);
-            TimeUnitValues.Add(ETimeUnit.fs, 1e-12);
+            TimeUnitValues.Add(ETimeUnit.S, 1);
+            TimeUnitValues.Add(ETimeUnit.mS, 1e-3);
+            TimeUnitValues.Add(ETimeUnit.uS, 1e-6);
+            TimeUnitValues.Add(ETimeUnit.nS, 1e-9);
+            TimeUnitValues.Add(ETimeUnit.fS, 1e-12);
 
             VoltUnitValues = new Dictionary<EVoltUnit, double>();
             VoltUnitValues.Add(EVoltUnit.Auto, -1.0d);
@@ -63,7 +63,7 @@ namespace WaveformView
 
         private Point _mouseLocation;
 
-        public ETimeUnit TimeUnit { get; set; } = ETimeUnit.Auto;
+        public ETimeUnit TimeUnit { get; set; } = ETimeUnit.nS;
 
         public EVoltUnit VoltUnit { get; set; } = EVoltUnit.Auto;
 
@@ -177,7 +177,7 @@ namespace WaveformView
                 }
             }
 
-            TimeUnit = ETimeUnit.Auto;
+            TimeUnit = ETimeUnit.nS;
 
             VoltUnit = EVoltUnit.Auto;
         }
@@ -349,8 +349,14 @@ namespace WaveformView
                 if (cycleLine_PosiX < WFLeft || cycleLine_PosiX > WFRight) continue;
 
                 dc.DrawLine(ColorProperties.GridPen, new Point(cycleLine_PosiX, WFTop), new Point(cycleLine_PosiX, WFBottom));
-                
 
+                var cycleTime_HalfWidth = cycleProp.CycleTimeFormattedText.WidthIncludingTrailingWhitespace / 2d;
+                var cycleTime_PosiX = cycleLine_PosiX - cycleTime_HalfWidth;
+                var cycleTime_PosiY = WFBottom + TextPadding;
+
+                if (cycleTime_PosiX < WFLeft || cycleTime_PosiX + cycleTime_HalfWidth > WFRight) continue;
+
+                dc.DrawText(cycleProp.CycleTimeFormattedText, new Point(cycleTime_PosiX, cycleTime_PosiY));
             }
         }
 
@@ -418,6 +424,10 @@ namespace WaveformView
                         {
                             currPointIndexOfCycle = (int)((HornizontalScrollValue - firstCycleProp.PointAccumulator * PixelPerPoint) / PixelPerPoint);
 
+                            var hasVoltValue = cycleResult.PointSize > currPointIndexOfCycle;
+
+                            if (!hasVoltValue) continue;
+
                             var voltage = cycleResult[currPointIndexOfCycle];
 
                             var firstPoint_XPosi = (firstCycleProp.PointAccumulator + currPointIndexOfCycle) * PixelPerPoint + WFLeft - HornizontalScrollValue;
@@ -444,10 +454,11 @@ namespace WaveformView
                             currPoint.Y = firstPoint_YPosi;
 
                             if(lastPoint.X >= WFLeft && lastPoint.X <= WFRight && lastPoint.Y >= WFTop && lastPoint.Y <= WFBottom &&
-                                currPoint.X >= WFLeft && currPoint.X <= WFRight && currPoint.Y >= WFTop && currPoint.Y <= WFBottom)
+                               lastPoint.Y >= maxVoltPosiY && lastPoint.Y <= minVoltPosiY && 
+                               currPoint.X >= WFLeft && currPoint.X <= WFRight && currPoint.Y >= WFTop && currPoint.Y <= WFBottom &&
+                               currPoint.Y >= maxVoltPosiY && currPoint.Y <= minVoltPosiY
+                               )
                             {
-
-                                //還需要增加曲線不能夠超出最大/最小電壓範圍...
                                 dc.DrawLine(WaveformLinePropertyItemsSource[lineIndex].LinePen, lastPoint, currPoint);
                             }
 
@@ -499,6 +510,21 @@ namespace WaveformView
             MaxHornizontalScrollValue = lastCycleProp is null ? 1 : (lastCycleProp.PointAccumulator + lastCycleProp.PointSize) * PixelPerPoint;
 
             MaxVerticalScrollValue = ShowdowPinPropertyItemsSource.Count * WH;
+
+            //update cycle prop cycle time
+            foreach(var cycleProp in CyclePropertyItemsSource) 
+            {
+                if(cycleProp.CycleTimeFormattedText is null)
+                {
+                    var timeValue = (cycleProp.PointAccumulator + cycleProp.PointSize) * TimeResolution;
+                    var timeText = ValueToTimingText(timeValue);
+                    cycleProp.CycleTimeFormattedText = TransFormattedText(timeText, ColorProperties.TextBrush);
+                }
+                else
+                {
+                    cycleProp.CycleTimeFormattedText.SetForegroundBrush(ColorProperties.TextBrush);
+                }
+            }
 
             //found max pin name width
             var maxTextWidth = 10d;
@@ -581,7 +607,15 @@ namespace WaveformView
 
         private Dictionary<ETimeUnit, double> TimeUnitValues { get; }
 
+
+
         public int VoltUnitDecimals { get; set; } = 2;
+
+        internal string ValueToTimingText(double value)
+        {
+            var timeValue = value / TimeUnitValues[TimeUnit];
+            return $"{timeValue}{TimeUnit.ToString()}";
+        }
 
         internal string VoltageTransText(double voltage)
         {

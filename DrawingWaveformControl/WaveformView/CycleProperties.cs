@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace WaveformView
 {
@@ -18,5 +19,7 @@ namespace WaveformView
         public int PointSize { get; }
 
         internal int PointAccumulator { get; set; }
+
+        internal FormattedText CycleTimeFormattedText { get; set; }
     }
 }
