@@ -300,10 +300,6 @@ namespace WaveformView
 
             var pinProperties = ShowingPinPropertyItemsSource.ToArray();
 
-            if (cycleProperties.Length == 0) { return; }
-            if(pinProperties.Length == 0) { return; }
-
-
             var gridThickness = 1.0d;
             var gridPen = new Pen(ColorProperties.GridBrush, gridThickness);
             gridPen.Freeze();
@@ -312,10 +308,15 @@ namespace WaveformView
             // background
             dc.DrawRectangle(ColorProperties.BackgroundBrush, null, new Rect(0, 0, this.ActualWidth, this.ActualHeight));
 
+            if (cycleProperties.Length > 0 && pinProperties.Length > 0)
+            {
+                OnRender(dc, pinProperties, cycleProperties);
+            }
 
-            OnRender(dc, pinProperties, cycleProperties);
-
-            OnRender(dc, cycleProperties);
+            if (cycleProperties.Length > 0)
+            {
+                OnRender(dc, cycleProperties);
+            }
 
             // Legend line
             var legendHeightTop = ActualTopLeft.Y + LegendHeight;
@@ -394,8 +395,11 @@ namespace WaveformView
                 var maxVoltPosiY = pinTop + MaxMinVoltageScalePadding;
                 var minVoltPosiY = pinTop + WH - MaxMinVoltageScalePadding;
 
-                var maxVoltTextTop = maxVoltPosiY - pinProp.MaxVoltFormattedText.Height / 2;
-                var minVoltTextTop = minVoltPosiY - pinProp.MinVoltFormattedText.Height / 2;
+                var maxVoltText_HalfHeight = pinProp.MaxVoltFormattedText.Height / 2;
+                var maxVoltTextTop = maxVoltPosiY - maxVoltText_HalfHeight;
+
+                var minVoltText_HalfHeight = pinProp.MinVoltFormattedText.Height / 2;
+                var minVoltTextTop = minVoltPosiY - minVoltText_HalfHeight;
 
 
                 var lineSize = pinProp.LineSize;
@@ -475,7 +479,7 @@ namespace WaveformView
                     dc.DrawLine(ColorProperties.MaxMinVoltLinePen, new Point(WFLeft, maxVoltPosiY), new Point(WFRight, maxVoltPosiY));
                 }
 
-                if(maxVoltTextTop > WFTop && maxVoltTextTop < WFBottom)
+                if(maxVoltTextTop > WFTop && maxVoltTextTop + maxVoltText_HalfHeight < WFBottom)
                 {
                     dc.DrawText(pinProp.MaxVoltFormattedText, new Point(WFLeft - pinProp.MaxVoltFormattedText.WidthIncludingTrailingWhitespace - TextPadding, maxVoltTextTop));
                 }
@@ -485,7 +489,7 @@ namespace WaveformView
                     dc.DrawLine(ColorProperties.MaxMinVoltLinePen, new Point(WFLeft, minVoltPosiY), new Point(WFRight, minVoltPosiY));
                 }
 
-                if (minVoltTextTop > WFTop && minVoltTextTop < WFBottom)
+                if (minVoltTextTop > WFTop && minVoltTextTop + minVoltText_HalfHeight < WFBottom)
                 {
                     dc.DrawText(pinProp.MinVoltFormattedText, new Point(WFLeft - pinProp.MinVoltFormattedText.WidthIncludingTrailingWhitespace - TextPadding, minVoltTextTop));
                 }
