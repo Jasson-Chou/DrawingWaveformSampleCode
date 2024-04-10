@@ -41,7 +41,7 @@ namespace WaveformViewDemo
                 new CycleProperties(10), new CycleProperties(20),
             };
 
-            for(int cycleIndex = 0; cycleIndex < 10; cycleIndex++)
+            for(int cycleIndex = 0; cycleIndex < 50; cycleIndex++)
             {
                 int pointSize = (new Random(DateTime.Now.Ticks.GetHashCode())).Next(2, 100);
                 CyclePropertyItemsSource.Add(new CycleProperties(pointSize));

@@ -21,6 +21,7 @@ namespace WaveformView
         nS,
         ps,
         fS,
+        Auto,
     }
 
     public enum EVoltUnit
@@ -63,7 +64,7 @@ namespace WaveformView
 
         private Point _mouseLocation;
 
-        public ETimeUnit TimeUnit { get; set; } = ETimeUnit.nS;
+        public ETimeUnit TimeUnit { get; set; } = ETimeUnit.Auto;
 
         public EVoltUnit VoltUnit { get; set; } = EVoltUnit.Auto;
 
@@ -177,7 +178,7 @@ namespace WaveformView
                 }
             }
 
-            TimeUnit = ETimeUnit.nS;
+            TimeUnit = ETimeUnit.Auto;
 
             VoltUnit = EVoltUnit.Auto;
         }
@@ -303,7 +304,6 @@ namespace WaveformView
             var gridThickness = 1.0d;
             var gridPen = new Pen(ColorProperties.GridBrush, gridThickness);
             gridPen.Freeze();
-            //dc.DrawLine(new Pen(Brushes.Black, 1.0d), new Point(0, 0), new Point(this.ActualWidth, this.ActualHeight));
 
             // background
             dc.DrawRectangle(ColorProperties.BackgroundBrush, null, new Rect(0, 0, this.ActualWidth, this.ActualHeight));
@@ -318,10 +318,10 @@ namespace WaveformView
                 OnRender(dc, cycleProperties);
             }
 
-            // Legend line
+            // Line Legend Area 
             var legendHeightTop = ActualTopLeft.Y + LegendHeight;
             dc.DrawLine(gridPen, new Point(ActualTopLeft.X, legendHeightTop), new Point(WFRight, legendHeightTop));
-
+            
             // WF Top
             dc.DrawLine(gridPen, new Point(ActualTopLeft.X, WFTop), new Point(WFRight, WFTop));
 
@@ -336,10 +336,49 @@ namespace WaveformView
             
             // 最外圍方框
             dc.DrawRectangle(null, gridPen, new Rect(ActualTopLeft, new Size(ActualMW, ActualMH)));
-            
+
+            // Line Legend
+
+            if(WaveformLinePropertyItemsSource != null && WaveformLinePropertyItemsSource.Count > 0)
+            {
+                OnRender(dc, WaveformLinePropertyItemsSource);
+            }
+
         }
 
-        private void OnRender(DrawingContext dc, CycleProperties[] cycleProperties)
+        private void OnRender(DrawingContext dc, IReadOnlyList<WaveformLineProperties> waveformLineProperties)
+        {
+            double posiX = this.ActualTopLeft.X;
+
+            double center_posiY = this.ActualTopLeft.Y + (LegendHeight / 2.0d);
+
+            const double lineLen = 22.5d;
+
+            for(int lineIndex = 0; lineIndex < waveformLineProperties.Count; lineIndex++)
+            {
+                var lineProp = waveformLineProperties[lineIndex];
+
+                if(!lineProp.IsVisible) continue;
+
+                posiX += TextPadding;
+
+                var name = lineProp.Name;
+
+                var nameFormattedText = TransFormattedText(name, ColorProperties.TextBrush);
+
+                dc.DrawText(nameFormattedText, new Point(posiX, center_posiY - (nameFormattedText.Height / 2.0d)));
+
+                posiX += nameFormattedText.WidthIncludingTrailingWhitespace;
+
+                posiX += TextPadding;
+
+                dc.DrawLine(lineProp.LinePen, new Point(posiX, center_posiY), new Point(posiX + lineLen, center_posiY));
+
+                posiX += lineLen;
+            }
+        }
+
+        private void OnRender(DrawingContext dc, IReadOnlyList<CycleProperties> cycleProperties)
         {
             foreach(var cycleProp in cycleProperties)
             {
@@ -361,7 +400,7 @@ namespace WaveformView
             }
         }
 
-        private void OnRender(DrawingContext dc, PinProperties[] pinProperties, CycleProperties[] cycleProperties)
+        private void OnRender(DrawingContext dc, IReadOnlyList<PinProperties> pinProperties, IReadOnlyList<CycleProperties> cycleProperties)
         {
             var showdowPinPropItems = ShowdowPinPropertyItemsSource.ToList();
 
@@ -397,9 +436,11 @@ namespace WaveformView
 
                 var maxVoltText_HalfHeight = pinProp.MaxVoltFormattedText.Height / 2;
                 var maxVoltTextTop = maxVoltPosiY - maxVoltText_HalfHeight;
+                var maxVoltTextBottom = maxVoltPosiY + maxVoltText_HalfHeight;
 
                 var minVoltText_HalfHeight = pinProp.MinVoltFormattedText.Height / 2;
                 var minVoltTextTop = minVoltPosiY - minVoltText_HalfHeight;
+                var minVoltTextBottom = minVoltPosiY + minVoltText_HalfHeight;
 
 
                 var lineSize = pinProp.LineSize;
@@ -479,7 +520,7 @@ namespace WaveformView
                     dc.DrawLine(ColorProperties.MaxMinVoltLinePen, new Point(WFLeft, maxVoltPosiY), new Point(WFRight, maxVoltPosiY));
                 }
 
-                if(maxVoltTextTop > WFTop && maxVoltTextTop + maxVoltText_HalfHeight < WFBottom)
+                if(maxVoltTextTop > WFTop && maxVoltTextBottom < WFBottom)
                 {
                     dc.DrawText(pinProp.MaxVoltFormattedText, new Point(WFLeft - pinProp.MaxVoltFormattedText.WidthIncludingTrailingWhitespace - TextPadding, maxVoltTextTop));
                 }
@@ -489,7 +530,7 @@ namespace WaveformView
                     dc.DrawLine(ColorProperties.MaxMinVoltLinePen, new Point(WFLeft, minVoltPosiY), new Point(WFRight, minVoltPosiY));
                 }
 
-                if (minVoltTextTop > WFTop && minVoltTextTop + minVoltText_HalfHeight < WFBottom)
+                if (minVoltTextTop > WFTop && minVoltTextBottom < WFBottom)
                 {
                     dc.DrawText(pinProp.MinVoltFormattedText, new Point(WFLeft - pinProp.MinVoltFormattedText.WidthIncludingTrailingWhitespace - TextPadding, minVoltTextTop));
                 }
@@ -614,16 +655,43 @@ namespace WaveformView
 
 
         public int VoltUnitDecimals { get; set; } = 2;
+        public int TimeUnitDecimals { get; set; } = 2;
 
         internal string ValueToTimingText(double value)
         {
-            var timeValue = value / TimeUnitValues[TimeUnit];
-            return $"{timeValue}{TimeUnit.ToString()}";
+            if (double.IsNaN(value)) return "NaN";
+            if (TimeUnit == ETimeUnit.Auto)
+            {
+                var enumCnt = Enum.GetValues(typeof(ETimeUnit)).Cast<ETimeUnit>().Count();
+                for (int enumIdx = 0; enumIdx < enumCnt - 1; enumIdx++)
+                {
+                    var eTime = (ETimeUnit)enumIdx;
+                    var unitValue = TimeUnitValues[eTime];
+                    var divi = value / unitValue;
+                    if (divi == 0.0d)
+                    {
+                        return $"{divi} {eTime.ToString()}";
+                    }
+                    else if ((int)(divi) != 0)
+                    {
+                        return $"{Math.Round(divi, TimeUnitDecimals)} {eTime.ToString()}";
+                    }
+                }
+                return "error";
+            }
+            else
+            {
+                var unitValue = TimeUnitValues[TimeUnit];
+                var divi = value / unitValue;
+                return $"{Math.Round(divi, TimeUnitDecimals)} {TimeUnit.ToString()}";
+            }
+            //var timeValue = value / TimeUnitValues[TimeUnit];
+            //return $"{timeValue}{TimeUnit.ToString()}";
         }
 
-        internal string VoltageTransText(double voltage)
+        internal string VoltageTransText(double value)
         {
-            if (double.IsNaN(voltage)) return "NaN";
+            if (double.IsNaN(value)) return "NaN";
             if (VoltUnit == EVoltUnit.Auto)
             {
                 var enumCnt = Enum.GetValues(typeof(EVoltUnit)).Cast<EVoltUnit>().Count();
@@ -631,7 +699,7 @@ namespace WaveformView
                 {
                     var eVolt = (EVoltUnit)enumIdx;
                     var unitValue = VoltUnitValues[eVolt];
-                    var divi = voltage / unitValue;
+                    var divi = value / unitValue;
                     if (divi == 0.0d)
                     {
                         return $"{divi} {eVolt.ToString()}";
@@ -646,7 +714,7 @@ namespace WaveformView
             else
             {
                 var unitValue = VoltUnitValues[VoltUnit];
-                var divi = voltage / unitValue;
+                var divi = value / unitValue;
                 return $"{Math.Round(divi, VoltUnitDecimals)} {VoltUnit.ToString()}";
             }
         }
