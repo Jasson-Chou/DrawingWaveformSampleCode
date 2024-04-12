@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -62,7 +64,7 @@ namespace WaveformView
 
         private bool _mouseRightBtnDown = false;
 
-        private Point _mouseLocation;
+        private Point _currMousePosi;
 
         public ETimeUnit TimeUnit { get; set; } = ETimeUnit.Auto;
 
@@ -266,7 +268,8 @@ namespace WaveformView
         protected override void OnPreviewMouseMove(MouseEventArgs e)
         {
             base.OnPreviewMouseMove(e);
-            _mouseLocation = e.GetPosition(this);
+            _currMousePosi = e.GetPosition(this);
+            this.InvalidateVisual();
         }
 
         protected override void OnPreviewMouseRightButtonDown(MouseButtonEventArgs e)
@@ -506,6 +509,70 @@ namespace WaveformView
                             {
                                 dc.DrawLine(WaveformLinePropertyItemsSource[lineIndex].LinePen, lastPoint, currPoint);
                             }
+                            else
+                            {
+                                Point p1 = new Point(), p2 = new Point();
+
+                                if(maxVoltPosiY < WFTop)
+                                {
+                                    if(lastPoint.Y < WFTop && currPoint.Y < WFTop)
+                                    {
+
+                                    }
+                                    else if(lastPoint.Y < WFTop)
+                                    {
+                                        p1.X = WFLeft;
+                                        p2.X = WFRight;
+                                        p1.Y = WFTop;
+                                        p2.Y = WFTop;
+
+                                        var crossPoint = CrossPoint(lastPoint, currPoint, p1, p2);
+                                        if(crossPoint.Value.X <= WFRight)
+                                            dc.DrawLine(WaveformLinePropertyItemsSource[lineIndex].LinePen, crossPoint.Value, currPoint);
+                                    }
+                                    else if(currPoint.Y < WFTop)
+                                    {
+                                        p1.X = WFLeft;
+                                        p2.X = WFRight;
+                                        p1.Y = WFTop;
+                                        p2.Y = WFTop;
+                                        var crossPoint = CrossPoint(lastPoint, currPoint, p1, p2);
+                                        if(crossPoint.Value.X <= WFRight)
+                                            dc.DrawLine(WaveformLinePropertyItemsSource[lineIndex].LinePen, lastPoint, crossPoint.Value);
+                                    }
+                                }
+                                else
+                                {
+                                    if (lastPoint.Y > WFBottom && currPoint.Y > WFBottom)
+                                    {
+
+                                    }
+                                    else if (lastPoint.Y > WFBottom)
+                                    {
+                                        p1.X = WFLeft;
+                                        p2.X = WFRight;
+                                        p1.Y = WFBottom;
+                                        p2.Y = WFBottom;
+
+                                        var crossPoint = CrossPoint(lastPoint, currPoint, p1, p2);
+                                        if (crossPoint.Value.X <= WFRight)
+                                            dc.DrawLine(WaveformLinePropertyItemsSource[lineIndex].LinePen, crossPoint.Value, currPoint);
+                                    }
+                                    else if (currPoint.Y > WFBottom)
+                                    {
+                                        p1.X = WFLeft;
+                                        p2.X = WFRight;
+                                        p1.Y = WFBottom;
+                                        p2.Y = WFBottom;
+                                        var crossPoint = CrossPoint(lastPoint, currPoint, p1, p2);
+                                        if (crossPoint.Value.X <= WFRight)
+                                            dc.DrawLine(WaveformLinePropertyItemsSource[lineIndex].LinePen, lastPoint, crossPoint.Value);
+                                    }
+                                }
+
+
+                                
+                            }
 
                             lastPoint = currPoint;
                         }
@@ -540,6 +607,32 @@ namespace WaveformView
                 if (pinBottom > WFTop && pinBottom < WFBottom)
                 {
                     dc.DrawLine(ColorProperties.GridPen, new Point(ActualTopLeft.X, pinBottom), new Point(WFRight, pinBottom));
+                }
+
+                if(_mouseEnter && _currMousePosi.X >= this.WFLeft && _currMousePosi.X <= this.WFRight &&
+                    _currMousePosi.Y >= this.WFTop && _currMousePosi.Y <= this.WFBottom)
+                {
+                    var pinIndexPointer = (VerticalScrollValue + (_currMousePosi.Y - WFTop)) / WH;
+                    var hornizontalLen = HornizontalScrollValue + (_currMousePosi.X - WFLeft);
+                    var cyclePropPointer = ShowingCyclePropertyItemsSource.LastOrDefault(item => item.PointAccumulator * PixelPerPoint < hornizontalLen);
+                    var pointTemp = hornizontalLen / PixelPerPoint;
+                    var diffPointTemp = pointTemp - (int)pointTemp;
+                    var pointIndex = (int)pointTemp + Math.Round(diffPointTemp, 0);
+                    var time = pointIndex * TimeResolution;
+                    var timeText = ValueToTimingText(time);
+                    var timeFormatted = TransFormattedText(timeText, ColorProperties.TextBrush);
+                    var pointerPosiX = pointIndex * PixelPerPoint + this.WFLeft - HornizontalScrollValue;
+                    dc.DrawLine(ColorProperties.GridPen, new Point(pointerPosiX, this.WFTop), new Point(pointerPosiX, this.WFBottom));
+                    dc.DrawText(timeFormatted, new Point(pointerPosiX - (timeFormatted.WidthIncludingTrailingWhitespace / 2.0d), this.WFBottom + TextPadding));
+
+
+                    var cycleIndex = cyclePropPointer?.Index ?? -1;
+                    if(cycleIndex != -1)
+                    {
+                        var cycleIndexText = $"[{cycleIndex}]";
+                        var cycleIndexFormatted = TransFormattedText(cycleIndexText, ColorProperties.TextBrush);
+                        dc.DrawText(cycleIndexFormatted, new Point(pointerPosiX - (cycleIndexFormatted.WidthIncludingTrailingWhitespace / 2.0d), this.WFTop - (this.CH + cycleIndexFormatted.Height) / 2.0d));
+                    }
                 }
             }
         }
@@ -737,6 +830,99 @@ namespace WaveformView
                     brush, // 文字顏色
                     VisualTreeHelper.GetDpi(this).PixelsPerDip); //Render在不同DPI的顯示器上能夠自動調整
             return result;
+        }
+
+        internal Nullable<Point> CrossPoint(Point line1Point1, Point line1Point2, Point line2Point1, Point line2Point2)
+        {
+            /**
+             *兩條線求直線方程式
+             * y = ax + b
+             * * L1P1.Y = a1 * L1P1.X + b1
+             * * L1P2.Y = a1 * L1P2.X + b1
+             * * (L1P1.Y - L1P2.Y) = (L1P1.X - L1P2.X) * a1  ==> a1 = (L1P1.Y - L1P2.Y) / (L1P1.X - L1P2.X),  L1P1.Y = (L1P1.Y - L1P2.Y)  * L1P1.X / (L1P1.X - L1P2.X) + b1 ==> b1 =  L1P1.Y - (L1P1.Y - L1P2.Y)  * L1P1.X / (L1P1.X - L1P2.X)
+             * *
+             * 兩條線交叉點
+             * y = a1 x + b1
+             * y = a2 x + b2
+             * 0 = (a1 - a2) x + (b1 - b2) ==> x = -(b1 - b2) / (a1 - a2) = x,,, y = a1 (- (b1 - b2) / (a1 - a2)) + b1
+             */
+            var px = double.NaN;
+            var py = double.NaN;
+            var L1XDiff = (line1Point1.X - line1Point2.X);
+            var L1YDiff = (line1Point1.Y - line1Point2.Y);
+            var L2XDiff = (line2Point1.X - line2Point2.X);
+            var L2YDiff = (line2Point1.Y - line2Point2.Y);
+
+            if (L1XDiff == L2XDiff && L1YDiff == L2YDiff) // 平行線
+            {
+                return null;
+            }
+
+            if (L1XDiff == 0.0d) // 直線
+            {
+                px = line1Point1.X;
+            }
+            if (L2XDiff == 0.0d)
+            {
+                px = line2Point1.X;
+            }
+            if (L1YDiff == 0.0d)
+            {
+                py = line1Point1.Y;
+            }
+            if (L2YDiff == 0.0d)
+            {
+                py = line2Point1.Y;
+            }
+
+            if (double.IsNaN(px) && double.IsNaN(py))
+            {
+                var a1 = (line1Point1.Y - line1Point2.Y) / (line1Point1.X - line1Point2.X);
+                var b1 = line1Point1.Y - a1 * line1Point1.X;
+
+                var a2 = (line2Point1.Y - line2Point2.Y) / (line2Point1.X - line2Point2.X);
+                var b2 = line2Point1.Y - a2 * line2Point1.X;
+
+                px = -(b1 - b2) / (a1 - a2);
+                py = a1 * px + b1;
+            }
+            else if (!double.IsNaN(px) && double.IsNaN(py))
+            {
+                //py = a * px + b
+                if (L1XDiff == 0.0d)
+                {
+                    var a2 = (line2Point1.Y - line2Point2.Y) / (line2Point1.X - line2Point2.X);
+                    var b2 = line2Point1.Y - a2 * line1Point1.X;
+
+                    py = a2 * px + b2;
+                }
+                else
+                {
+                    var a1 = (line1Point1.Y - line1Point2.Y) / (line1Point1.X - line1Point2.X);
+                    var b1 = line1Point1.Y - a1 * line1Point1.X;
+
+                    py = a1 * px + b1;
+                }
+            }
+            else if (double.IsNaN(px) && !double.IsNaN(py))
+            {
+                if (L1YDiff == 0.0d)
+                {
+                    var a2 = (line2Point1.Y - line2Point2.Y) / (line2Point1.X - line2Point2.X);
+                    var b2 = line2Point1.Y - a2 * line1Point1.X;
+
+                    px = (py - b2) / a2;
+                }
+                else
+                {
+                    var a1 = (line1Point1.Y - line1Point2.Y) / (line1Point1.X - line1Point2.X);
+                    var b1 = line1Point1.Y - a1 * line1Point1.X;
+
+                    px = (py - b1) / a1;
+                }
+            }
+
+            return new Point(px, py);
         }
     }
 }
