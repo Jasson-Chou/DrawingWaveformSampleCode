@@ -77,9 +77,31 @@ Instance.Setup(CyclePropertyItemsSource, PinPropertyItemsSource, WaveformLinePro
 ```
 
 #### Timing Setting
+```C#
+Instance.TimeResolution = 0.001; // Sec
+Instance.TimeUnit = ETimeUnit.Auto; // Auto Trans
+Instance.TimeUnitDecimals= 2; // 1 ms in UI.
+```
 #### Scroll Hornizontal/Vertical 
-#### VerticalScrollValue
+```C#
+Instance.HornizontalScrollValue= 25.1; // scroll hornizontal to 25.1 position.
+Instance.VerticalScrollValue= 60.1; // scroll vertical to 60.1 position.
+```
 #### Color Change
+```C#
+Instance.ColorProperties = new ColorProperties()
+{
+    Background = Colors.White,
+    DefaultWaveformLine = Colors.Green,
+    Grid = Colors.Black,
+    MaxMinVoltLine= Colors.Red,
+    Text = Colors.Black,
+};
+
+Instance.Update();
+```
+![change color](https://github.com/Jasson-Chou/DrawingWaveformSampleCode/assets/74143452/a2d1cf0d-1e40-4de7-ace9-013d9b28e7c3)
+
 #### Zoom In/Out
 #### Show Voltage/ Timing Unit
 
