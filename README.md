@@ -103,7 +103,20 @@ Instance.Update();
 ![change color](https://github.com/Jasson-Chou/DrawingWaveformSampleCode/assets/74143452/a2d1cf0d-1e40-4de7-ace9-013d9b28e7c3)
 
 #### Zoom In/Out
-#### Show Voltage/ Timing Unit
+```C#
+//Zoom In
+Instance.VerticalScale = 2.0d; // default 1.0d
+Instance.HornizontalScale = 3.0d; // default 1.0d
+
+//Zoom Out
+Instance.VerticalScale = 0.3d; // default 1.0d
+Instance.HornizontalScale = 0.5d; // default 1.0d
+```
+#### Show Voltage Unit
+```C#
+Instance.VoltUnit = EVoltUnit.Auto;
+Instance.VoltUnitDecimals = 2;
+```
 
 ![fulldemo](https://github.com/Jasson-Chou/DrawingWaveformSampleCode/assets/74143452/4524ec21-730d-4db3-a687-cde8c4de160f)
 ![mouseMove](https://github.com/Jasson-Chou/DrawingWaveformSampleCode/assets/74143452/ec3aecc1-778c-4094-8990-3c801ed17839)
