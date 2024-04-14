@@ -36,10 +36,7 @@ namespace WaveformViewDemo
 
         private void GenBtn_Click(object sender, RoutedEventArgs e)
         {
-            var CyclePropertyItemsSource = new List<CycleProperties>()
-            {
-                new CycleProperties(10), new CycleProperties(20),
-            };
+            var CyclePropertyItemsSource = new List<CycleProperties>();
 
             for(int cycleIndex = 0; cycleIndex < 50; cycleIndex++)
             {
@@ -85,10 +82,36 @@ namespace WaveformViewDemo
                     
                 }
             }
-            
 
+            Instance.VoltUnit = EVoltUnit.Auto;
+            Instance.VoltUnitDecimals = 2;
+
+            Instance.TimeResolution = 0.001; // Sec
+            Instance.TimeUnit = ETimeUnit.Auto; // Auto Trans
+            Instance.TimeUnitDecimals= 2; // 1 ms in UI.
 
             Instance.Setup(CyclePropertyItemsSource, PinPropertyItemsSource, WaveformLinePropertyItemsSource);
+
+            Instance.HornizontalScrollValue= 25.1; // scroll hornizontal to 25.1 position.
+            Instance.VerticalScrollValue= 60.1; // scroll vertical to 60.1 position.
+
+
+            Instance.ColorProperties = new ColorProperties()
+            {
+                Background = Colors.White,
+                DefaultWaveformLine = Colors.Green,
+                Grid = Colors.Black,
+                MaxMinVoltLine= Colors.Red,
+                Text = Colors.Black,
+            };
+
+            //Zoom In
+            Instance.VerticalScale = 2.0d; // default 1.0d
+            Instance.HornizontalScale = 3.0d; // default 1.0d
+
+            //Zoom Out
+            Instance.VerticalScale = 0.3d; // default 1.0d
+            Instance.HornizontalScale = 0.5d; // default 1.0d
 
             Instance.Update();
         }
