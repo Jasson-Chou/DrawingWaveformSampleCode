@@ -53,8 +53,13 @@
     <Compile Include="CycleResult.cs" />
     <Compile Include="DefaultProperties.cs" />
     <Compile Include="PinProperties.cs" />
+    <Compile Include="SpacingProperties.cs" />
+    <Compile Include="TimingCursor.cs" />
+    <Compile Include="TimingMeasurement.cs" />
+    <Compile Include="VoltageRange.cs" />
+    <Compile Include="WaveformContext.cs" />
+    <Compile Include="WaveformHitTestInfo.cs" />
     <Compile Include="WaveformLineProperties.cs" />
-    <Compile Include="WaveformViewControl.cs" />
     <Page Include="WaveformViewer.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

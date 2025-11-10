@@ -25,95 +25,87 @@ namespace WaveformViewDemo
         public MainWindow()
         {
             InitializeComponent();
+            
         }
-
-        public WaveformViewControl Instance { get; set; }
 
         private void Window_Initialized(object sender, EventArgs e)
         {
-            Instance = waveformViewer.WaveformVieweControl;
+            ((App)App.Current).WCInstance = waveformViewer.Instance;
         }
 
         private void GenBtn_Click(object sender, RoutedEventArgs e)
         {
-            var CyclePropertyItemsSource = new List<CycleProperties>();
+            var wcInstance = ((App)App.Current).WCInstance;
+            var pinProperties = new List<PinProperties>(PinCount);
+            var cycleProperties = new List<CycleProperties>(CycleCount);
+            var lineProperties = new List<WaveformLineProperties>();
+            
+            lineProperties.Add(new WaveformLineProperties("Line0") {Thickness = 1.0d, LineColor = Colors.Blue, Show = true });
+            lineProperties.Add(new WaveformLineProperties("Line1") { Thickness = 2.0d, LineColor = Colors.Red, Show = true });
 
-            for(int cycleIndex = 0; cycleIndex < 50; cycleIndex++)
+
+            for (int cycleIndex = 0; cycleIndex < CycleCount; cycleIndex++)
             {
-                int pointSize = (new Random(DateTime.Now.Ticks.GetHashCode())).Next(2, 100);
-                CyclePropertyItemsSource.Add(new CycleProperties(pointSize));
+                var random = new Random(DateTime.Now.GetHashCode());
+                var cycleProp = new CycleProperties(1, random.Next(MinPointSize, MaxPointSize));
+                cycleProperties.Add(cycleProp);
             }
 
-            var PinPropertyItemsSource = new List<PinProperties>()
+            for (int pinIndex = 0; pinIndex < PinCount; pinIndex++)
             {
-            };
-
-            for(int pinIndex = 0;pinIndex < 10; pinIndex++)
-            {
-                PinPropertyItemsSource.Add(new PinProperties($"pin{pinIndex}", 2, CyclePropertyItemsSource.Count, 3.3, -1.2));
-            }
-
-            var WaveformLinePropertyItemsSource = new List<WaveformLineProperties>()
-            {
-                new WaveformLineProperties("line1", Colors.Blue),
-                new WaveformLineProperties("line2", Colors.Red),
-            };
+                var pinName = $"Pin {pinIndex}";
+                var voltageRange = new VoltageRange(MaxVolt, MinVolt);
+                var pinProp = new PinProperties(pinName, CycleCount, voltageRange);
+                var lineCount = (pinIndex % 2 == 0) ? 2 : 1;
 
 
-            for(int pinIndex = 0; pinIndex < PinPropertyItemsSource.Count; pinIndex++)
-            {
-                var pinProp = PinPropertyItemsSource[pinIndex];
-
-                for (int cycleIndex = 0; cycleIndex < CyclePropertyItemsSource.Count; cycleIndex++)
+                for (int cycleIndex = 0; cycleIndex < CycleCount; cycleIndex++)
                 {
-                    int pointSize = CyclePropertyItemsSource[cycleIndex].PointSize;
-                    for(int lineIndex = 0; lineIndex < pinProp.LineSize; lineIndex++)
-                    {
-                        var cycleResult = new CycleResult(pointSize);
+                    var cycleResult = cycleProperties[cycleIndex];
+                    var cyclePointSize = cycleResult.PointsSize;
+                    var pinCycleResult = new CycleResults(lineCount, cyclePointSize);
 
-                        var random = new Random(pinIndex + cycleIndex + lineIndex + DateTime.Now.Millisecond.GetHashCode());
-                        for (int pointIndex = 0; pointIndex < pointSize; pointIndex++)
-                        {
-                            cycleResult[pointIndex] = random.NextDouble() * - 1.2d + random.NextDouble() * 4.5d;
-                        }
-
-                        pinProp[lineIndex, cycleIndex] = cycleResult;
-                    }
+                    pinProp.DrawingCycles[cycleIndex] = pinCycleResult;
                     
+                    var random = new Random((int)DateTime.Now.Ticks + pinIndex);
+                    for(int pointIndex = 0; pointIndex < cyclePointSize; pointIndex++)
+                    {
+                        var voltage0 = random.NextDouble() * (MaxVolt - MinVolt) + MinVolt;
+                        pinCycleResult[0, pointIndex] = voltage0;
+
+                        if(lineCount == 2)
+                        {
+                            var voltage1 = random.NextDouble() * (MaxVolt - MinVolt) + MinVolt;
+                            pinCycleResult[1, pointIndex] = voltage1;
+                        }
+                    }
                 }
+                pinProperties.Add(pinProp);
             }
 
-            Instance.VoltUnit = EVoltUnit.Auto;
-            Instance.VoltUnitDecimals = 2;
+            wcInstance.Setup(cycleProperties);
+            wcInstance.Setup(pinProperties);
+            wcInstance.Setup(lineProperties);
 
-            Instance.TimeResolution = 0.001; // Sec
-            Instance.TimeUnit = ETimeUnit.Auto; // Auto Trans
-            Instance.TimeUnitDecimals= 2; // 1 ms in UI.
+            wcInstance.SpacingProperties.TimingResolution = 0.001; // 1 ms
+            wcInstance.SpacingProperties.TimingUnit = SpacingProperties.ETimeUnit.Auto;
 
-            Instance.Setup(CyclePropertyItemsSource, PinPropertyItemsSource, WaveformLinePropertyItemsSource);
+            wcInstance.SpacingProperties.TimingMeasurement.CursorName1 = "X0";
+            wcInstance.SpacingProperties.TimingMeasurement.CursorName2 = "X1";
 
-            Instance.HornizontalScrollValue= 25.1; // scroll hornizontal to 25.1 position.
-            Instance.VerticalScrollValue= 60.1; // scroll vertical to 60.1 position.
-
-
-            Instance.ColorProperties = new ColorProperties()
+            App.Current.Dispatcher.Invoke(() =>
             {
-                Background = Colors.White,
-                DefaultWaveformLine = Colors.Green,
-                Grid = Colors.Black,
-                MaxMinVoltLine= Colors.Red,
-                Text = Colors.Black,
-            };
-
-            //Zoom In
-            Instance.VerticalScale = 2.0d; // default 1.0d
-            //Instance.HornizontalScale = 3.0d; // default 1.0d
-
-            ////Zoom Out
-            //Instance.VerticalScale = 0.3d; // default 1.0d
-            //Instance.HornizontalScale = 0.5d; // default 1.0d
-
-            Instance.Update();
+                wcInstance.Render(WaveformContext.ERenderDirect.All);
+            });
         }
+
+        private const int PinCount = 16;
+        private const int CycleCount = 10;
+        private const double MaxVolt = 3.3;
+        private const double MinVolt = 0.0;
+        private const int MaxPointSize = 100;
+        private const int MinPointSize = 16;
+
+
     }
 }

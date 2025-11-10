@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using WaveformView;
 
 namespace WaveformViewDemo
 {
@@ -13,5 +14,10 @@ namespace WaveformViewDemo
     /// </summary>
     public partial class App : Application
     {
+
+        public WaveformContext WCInstance { get; set; }
+
+
+
     }
 }

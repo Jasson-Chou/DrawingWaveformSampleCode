@@ -10,20 +10,17 @@ namespace WaveformView
     public class WaveformLineProperties
     {
 
-        public WaveformLineProperties(string name, Color lineColor) 
-        { 
+        public WaveformLineProperties(string name)
+        {
             this.Name = name;
-            this.LineColor = lineColor;
         }
 
         public string Name { get; }
 
-        public double LineWidth { get; set; }
+        public double Thickness { get; set; } = DefaultValues.LineWidth;
 
-        public Color LineColor { get; set; }
+        public Nullable<Color> LineColor { get; set; } = null;
 
-        public bool IsVisible { get; set; } = true;
-
-        internal Pen LinePen { get; set; }
+        public bool Show { get; set; } = true;
     }
 }

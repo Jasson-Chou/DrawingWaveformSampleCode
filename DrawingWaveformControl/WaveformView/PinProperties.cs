@@ -9,43 +9,43 @@ namespace WaveformView
 {
     public class PinProperties
     {
-        public PinProperties(string name, int lineSize, int cycleSize, double maxScopeVoltage, double minScopeVoltage) 
-        { 
-            Name = name;
-            LineSize = lineSize;
-            CycleSize = cycleSize;
-            CycleResults = new CycleResult[lineSize, cycleSize];
-            MaxScopeVoltage = maxScopeVoltage;
-            MinScopeVoltage = minScopeVoltage;
+        public PinProperties(string name, int cycleCount, VoltageRange voltageRange)
+        {
+            this.Name = name;
+            VoltageRange = voltageRange;
+            this.DrawingCycles = new CycleResults[cycleCount];
+            TopLabel = null;
+        }
+
+        public PinProperties(string name, string topLabel, int cycleCount, VoltageRange voltageRange)
+        {
+            this.Name = name;
+            VoltageRange = voltageRange;
+            this.DrawingCycles = new CycleResults[cycleCount];
+            TopLabel = topLabel;
         }
 
         public string Name { get; }
 
-        public int CycleSize { get; }
+        /// <summary>
+        /// Label On Pin Header.
+        /// </summary>
+        public string TopLabel { get; set; }
 
-        public int LineSize { get; }
+        public bool Show { get; set; } = true;
 
-        private CycleResult[,] CycleResults { get; }
+        /// <summary>
+        /// Changing Show Sequence With Index
+        /// </summary>
+        public int Index { get; set; } = -1;
 
-        public CycleResult this[int lineIndex, int cycleIndex]
-        {
-            get { return CycleResults[lineIndex, cycleIndex]; }
-            set { CycleResults[lineIndex, cycleIndex] = value; }
-        }
+        /// <summary>
+        /// Fail Marker On Pin Header
+        /// </summary>
+        public bool HasFail => DrawingCycles.Any(item => item.IsFail);
 
-        public double MaxScopeVoltage { get; internal set; }
+        public VoltageRange VoltageRange { get; }
 
-        public double MinScopeVoltage { get; internal set; }
-
-
-        internal int Index { get; set; }
-
-        public bool IsVisible { get; set; } = true;
-
-        internal FormattedText NameFormattedText { get; set; }
-
-        internal FormattedText MaxVoltFormattedText { get; set; }
-
-        internal FormattedText MinVoltFormattedText { get; set; }
+        public CycleResults[] DrawingCycles { get; }
     }
 }

@@ -9,17 +9,21 @@ namespace WaveformView
 {
     public class CycleProperties
     {
-        public CycleProperties(int pointSize)
+        public CycleProperties(int offset, int pointsSize)
         {
-            PointSize = pointSize;
+            Offset = offset;
+            PointsSize = pointsSize;
         }
+        public bool IsFail { get; set; }
+        public int PointsSize { get; }
+        public int Index { get; internal set; }
 
-        internal int Index { get; set; }
+        public int Offset { get; }
+        /// <summary>
+        /// Record Length
+        /// </summary>
+        internal double DrawingXPosition { get; set; }
 
-        public int PointSize { get; }
-
-        internal int PointAccumulator { get; set; }
-
-        internal FormattedText CycleTimeFormattedText { get; set; }
+        internal int LastPointsSum { get; set; }
     }
 }

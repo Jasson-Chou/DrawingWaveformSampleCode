@@ -9,61 +9,55 @@ namespace WaveformView
 {
     public class ColorProperties
     {
-        public ColorProperties() { }
+        public Color Background { get; set; } = Colors.White;
 
-        public Color Grid { get; set; } = Colors.White;
+        public Color Line { get; set; } = Colors.Black;
 
-        public Color Background { get; set; } = Colors.Black;
+        public Color DefaultNaNWaveformLine { get; set; } = Colors.Red;
 
-        public Color DefaultWaveformLine { get; set; } = Colors.Blue;
+        public Color DefaultWaveformLine { get; set; } = Colors.Black;
 
-        public Color Text { get; set; } = Colors.White;
+        public Color CompareLine { get; set; } = Colors.Black;
 
-        public Color MaxMinVoltLine { get; set; } = Colors.White;
+        public Color CompareWindow { get; set; } = new Color() { A = 128, R = Colors.Blue.R, G = Colors.Blue.G, B = Colors.Blue.B };
+
+        public Color FailCycle { get; set; } = new Color() { A = 85, R = Colors.Red.R, G = Colors.Red.G, B = Colors.Red.B };
+
+        public Color FailCircle { get; set; } = Colors.Red;
+
+        public Color PinTopLabelRect { get; set; } = Colors.Orange;
+
+        public Color PinTopLabelText { get; set; } = Colors.White;
+
+        public Color PinName { get; set; } = Colors.Blue;
+
+        public Color TimingText { get; set; } = Colors.Black;
+
+        public Color VoltageText { get; set; } = Colors.Black;
 
 
-        internal Brush GridBrush { get; private set; }
-        internal Pen GridPen { get; private set; }
+        public Color CycleTopLabel { get; set; } = Colors.Black;
 
-        internal Brush BackgroundBrush { get; private set; }
-        internal Brush DefaultWaveformLineBrush { get; private set; }
-        
-        internal Brush TextBrush { get; private set; }
-        internal Pen TextPen { get; private set; }
+        public Color MaxMinVoltageLine { get; set; } = Colors.Green;
 
-        internal Brush MaxMinVoltLineBrush { get; private set; }
-        internal Pen MaxMinVoltLinePen { get; private set; }
+        public Color[] VoltageLevels { get; set; } = null;
 
+        public Color DefaultVoltageLevel { get; set; } = Colors.Orange;
 
+        public Color[] TimingCursorMeasurements { get; set; } = null;
 
+        public Color DefaultTimingCursorMeasurement { get; set; } = Colors.Blue;
 
-        internal void Update()
-        {
+        public Color MousePointText { get; set; } = Colors.Blue;
 
-            GridBrush = new SolidColorBrush(Grid);
-            GridBrush.Freeze();
+        public Color MouseCursorLine { get; set; } = Colors.DimGray;
 
-            GridPen = new Pen(GridBrush, DefaultProperties.LineThickness);
-            GridPen.Freeze();
+        public Color MouseCursorText { get; set; } = Colors.Red;
 
-            BackgroundBrush = new SolidColorBrush(Background);
-            BackgroundBrush.Freeze();
+        public Nullable<Color> GridLine { get; }
 
-            DefaultWaveformLineBrush = new SolidColorBrush(DefaultWaveformLine);
-            DefaultWaveformLineBrush.Freeze();
+        public Color InformationText { get; set; } = Colors.Blue;
 
-            TextBrush = new SolidColorBrush(Text);
-            TextBrush.Freeze();
-
-            TextPen = new Pen(TextBrush, DefaultProperties.LineThickness);
-            TextPen.Freeze();
-
-            MaxMinVoltLineBrush = new SolidColorBrush(MaxMinVoltLine);
-            MaxMinVoltLineBrush.Freeze();
-
-            MaxMinVoltLinePen = new Pen(MaxMinVoltLineBrush, DefaultProperties.LineThickness);
-            MaxMinVoltLinePen.DashStyle = DashStyles.Dash;
-            MaxMinVoltLinePen.Freeze();
-        }
+        public Color IgnoreLastPoint { get; set; } = Colors.LightGray;
     }
 }

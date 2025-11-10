@@ -7,8 +7,46 @@
              mc:Ignorable="d" Initialized="UserControl_Initialized"
              d:DesignHeight="450" d:DesignWidth="800">
     <DockPanel>
-        <ScrollBar x:Name="verticalSB" DockPanel.Dock="Right" ValueChanged="verticalSB_ValueChanged"/>
-        <ScrollBar x:Name="hornizontalSB" DockPanel.Dock="Bottom" Orientation="Horizontal" ValueChanged="hornizontalSB_ValueChanged"/>
-        <local:WaveformViewControl x:Name="waveformViewControl" />
+        <ScrollBar DockPanel.Dock="Right" x:Name="verticalScroll" ScrollBar.Scroll="VerticalScroll_Scroll" />
+        <ScrollBar DockPanel.Dock="Bottom" Orientation="Horizontal" x:Name="hornizontalScroll" ScrollBar.Scroll="HornizontalScroll_Scroll"/>
+        <Grid DockPanel.Dock="Bottom">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Grid Grid.Column="0" Grid.Row="0" Width="100">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Label Grid.Column="0" Content="X"/>
+                <Slider Grid.Column="1" x:Name="pixelXSlider" Value="1.0" Minimum="0.05" Maximum="5.0" ValueChanged="PixelXSlider_ValueChanged"/>
+            </Grid>
+            <Grid Grid.Column="1" Grid.Row="0" Width="100">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Label Grid.Column="0" Content="Y"/>
+                <Slider Grid.Column="1" x:Name="pixelYSlider" Value="1.0" Minimum="0.1" Maximum="5.0" ValueChanged="PixelYSlider_ValueChanged" />
+            </Grid>
+            <!--<Button Grid.Column="2" Grid.Row="0" x:Name="defaultZoomInOutBtn" Content="Reset" Click="DefaultZoomInOutBtn_Click"/>-->
+        </Grid>
+
+        <Grid x:Name="myGrid" SizeChanged="MyGrid_SizeChanged">
+            <Image x:Name="myImage" PreviewMouseLeftButtonDown="MyImage_PreviewMouseLeftButtonDown" 
+               PreviewMouseRightButtonDown="MyImage_PreviewMouseRightButtonDown" MouseMove="MyImage_MouseMove" 
+               MouseRightButtonUp="MyImage_MouseRightButtonUp"
+               MouseEnter="MyImage_MouseEnter" MouseLeave="MyImage_MouseLeave" MouseLeftButtonUp="MyImage_MouseLeftButtonUp"
+               PreviewMouseWheel="MyImage_PreviewMouseWheel" MouseWheel="MyImage_MouseWheel"
+               />
+        </Grid>
     </DockPanel>
 </UserControl>
