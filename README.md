@@ -5,6 +5,9 @@ In cases where a large number of pins are displayed, standard components may not
 * Visual Studio 2022
 * .Net Framework 4.8
 * Language Visual CSharp
+## Next objectives to implement
+- [ ] Fix the issue where the first item fails to render.
+- [ ] Add a demo feature for horizontal and vertical zoom in/out.
 ## User Manual
 ### API Example
 #### Create Waveoform View Control Instance
