@@ -107,11 +107,11 @@ namespace WaveformViewDemo
 
             //Zoom In
             Instance.VerticalScale = 2.0d; // default 1.0d
-            Instance.HornizontalScale = 3.0d; // default 1.0d
+            //Instance.HornizontalScale = 3.0d; // default 1.0d
 
-            //Zoom Out
-            Instance.VerticalScale = 0.3d; // default 1.0d
-            Instance.HornizontalScale = 0.5d; // default 1.0d
+            ////Zoom Out
+            //Instance.VerticalScale = 0.3d; // default 1.0d
+            //Instance.HornizontalScale = 0.5d; // default 1.0d
 
             Instance.Update();
         }
