@@ -1,126 +1,59 @@
 # Drawing Waveform With DrawingContext
-## Introduction
-In cases where a large number of pins are displayed, standard components may not be able to handle the load (resulting in lag and limited functionality). Therefore, I have provided a free example of how to efficiently draw large numbers of pin waveforms using C# WPF.
-## Development Environment
-* Visual Studio 2022
-* .Net Framework 4.8
-* Language Visual CSharp
-## Next objectives to implement
-- [ ] Fix the issue where the first item fails to render.
-- [ ] Add a demo feature for horizontal and vertical zoom in/out.
-## User Manual
-### API Example
-#### Create Waveoform View Control Instance
-```XAML
-xmlns:waveformView="clr-namespace:WaveformView;assembly=WaveformView"
+Github: https://github.com/Jasson-Chou/DrawingWaveformSampleCode.git
 
-<waveformView:WaveformViewer x:Name="waveformViewer"/>
-```
+### **Overview**
 
-```C#
-using WaveformView;
+This project is a lightweight user control for drawing waveform diagrams. With simple configuration, real-time drawing functionality can be achieved. It also provides highly customizable display options, such as showing the position of Strobes in each Channel, displaying text in Cycles, and more.
 
-namespace WaveformViewDemo
-{
-    public partial class MainWindow : Window
-    {
-         public MainWindow()
-        {
-            InitializeComponent();
-        }
+---
 
-        public WaveformViewControl Instance { get; set; }
+### **Requirements**
 
-        private void Window_Initialized(object sender, EventArgs e)
-        {
-            Instance = waveformViewer.WaveformVieweControl;
-        }
-    }
-}
-```
+- .NET Framework 4.8
 
-#### Add Pins / Cycles / Waveform Line Properties
-##### Create Pins
-```C#
-var PinPropertyItemsSource = new List<PinProperties>();
-for(int pinIndex = 0;pinIndex < 10; pinIndex++)
-{
-    // PinProperties(# pin name, # line count, # Cycle Count, # Max volt, # Min Volt)
-    // pin name : string
-    // line count : int
-    // cycle count : int
-    // max volt(Volt) : double
-    // min volt(Volt) : double
-    PinPropertyItemsSource.Add(new PinProperties($"pin{pinIndex}", 2, CyclePropertyItemsSource.Count, 3.3, -1.2));
-}
-```
-##### Create Cycles
-```C#
-var CyclePropertyItemsSource = new List<CycleProperties>();
-// Create 50 Cycle Count
-for(int cycleIndex = 0; cycleIndex < 50; cycleIndex++)
-{
-    // Example: Random Cycle Points
-    int pointSize = (new Random(DateTime.Now.Ticks.GetHashCode())).Next(2, 100);
-    CyclePropertyItemsSource.Add(new CycleProperties(pointSize));
-}
-```
-##### Create Waveform Properties Line
-```C#
-// Create 2 waveform line
-var WaveformLinePropertyItemsSource = new List<WaveformLineProperties>()
-{
-    new WaveformLineProperties("line1", Colors.Blue), // line1 blue color
-    new WaveformLineProperties("line2", Colors.Red), // line2 red color
-};
-```
-##### Instance Setup
-```C#
-Instance.Setup(CyclePropertyItemsSource, PinPropertyItemsSource, WaveformLinePropertyItemsSource);
-```
+---
 
-#### Timing Setting
-```C#
-Instance.TimeResolution = 0.001; // Sec
-Instance.TimeUnit = ETimeUnit.Auto; // Auto Trans
-Instance.TimeUnitDecimals= 2; // 1 ms in UI.
-```
-#### Scroll Hornizontal/Vertical 
-```C#
-Instance.HornizontalScrollValue= 25.1; // scroll hornizontal to 25.1 position.
-Instance.VerticalScrollValue= 60.1; // scroll vertical to 60.1 position.
-```
-#### Color Change
-```C#
-Instance.ColorProperties = new ColorProperties()
-{
-    Background = Colors.White,
-    DefaultWaveformLine = Colors.Green,
-    Grid = Colors.Black,
-    MaxMinVoltLine= Colors.Red,
-    Text = Colors.Black,
-};
+### **Build & Run**
 
-Instance.Update();
-```
-![change color](https://github.com/Jasson-Chou/DrawingWaveformSampleCode/assets/74143452/a2d1cf0d-1e40-4de7-ace9-013d9b28e7c3)
+1. Open DrawingWaveformControlSolution.sln
+2. Select Release | Debug and build
+3. Run the program
 
-#### Zoom In/Out
-```C#
-//Zoom Out
-Instance.VerticalScale = 2.0d; // default 1.0d
-Instance.HornizontalScale = 3.0d; // default 1.0d
+---
 
-//Zoom In
-Instance.VerticalScale = 0.3d; // default 1.0d
-Instance.HornizontalScale = 0.5d; // default 1.0d
-```
-#### Show Voltage Unit
-```C#
-Instance.VoltUnit = EVoltUnit.Auto;
-Instance.VoltUnitDecimals = 2;
-```
+### **Sample Code Explanation**
 
-![fulldemo](https://github.com/Jasson-Chou/DrawingWaveformSampleCode/assets/74143452/4524ec21-730d-4db3-a687-cde8c4de160f)
-![mouseMove](https://github.com/Jasson-Chou/DrawingWaveformSampleCode/assets/74143452/ec3aecc1-778c-4094-8990-3c801ed17839)
-![timing cursor](https://github.com/Jasson-Chou/DrawingWaveformSampleCode/assets/74143452/aef4bef4-8214-42fd-84ca-98d77e21ec29)
+In the `MainWindow.xaml.cs` file of the `WaveformViewDemo` project, there is a simple sample program. The execution steps of the `GenBtn_Click` event are as follows:
+
+1. Create lineProperties—two lines (blue and red), and configure their thickness and display properties.
+2. Create cycleProperties—add CycleProperties for each cycle, with PointsSize determined by a random number.
+3. Create pinProperties—create PinProperties for each pin, where each pin contains CycleResults for multiple cycles. Each point is filled with a random double-precision voltage value (ranging between MinVolt and MaxVolt), and even-numbered pins contain data for two lines.
+4. Inject cycleProperties, pinProperties, and lineProperties into WaveformContext sequentially through wcInstance.Setup(...).
+5. Configure SpacingProperties—including timing resolution (TimingResolution), timing unit (TimingUnit), and timing cursor name.
+6. Use Dispatcher.Invoke to call wcInstance.Render(WaveformContext.ERenderDirect.All) on the UI thread to render the waveform.
+
+---
+
+### **Demo - Multi-channel Waveform View**
+
+- Each row represents a Pin (Pin0 ~ Pin4).
+- The waveform has two lines: Line0 (blue) and Line1 (red), which can be overlaid to display two sets of measurements for the same Pin.
+- The Y-axis is marked with voltage, with dashed lines at 0 V and 3.3 V serving as references.
+- The X-axis represents time, with scales and annotations at the bottom and middle (for example, 19 ms, 99 ms).
+- The top-left corner has a legend indicating the line names and colors.
+- The status bar at the bottom of the window displays real-time information corresponding to the cursor position: Pin name, Offset, Index, and the voltage values (Volts) of both lines at that point in time, along with the mouse coordinates.
+- The X and Y sliders at the very bottom are used to pan or zoom the viewing range.
+
+![image.png](ReadmeSrc/image.png)
+
+---
+
+### **Future Plans**
+
+To improve the Demo functionality showcase, the Demo does not yet fully demonstrate all features.
+
+- [ ]  Add user-defined Channel quantity
+- [ ]  Add user-defined Cycle quantity
+- [ ]  Add user-defined number of points per Cycle
+- [ ]  Add functionality to dynamically modify Channel and line names
+- [ ]  Add Waveform auto-fit to screen functionality
