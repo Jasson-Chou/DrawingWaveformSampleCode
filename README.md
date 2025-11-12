@@ -48,10 +48,88 @@ In the `MainWindow.xaml.cs` file of the `WaveformViewDemo` project, there is a s
 
 ---
 
+### **GUI Layout**
+
+**Line Legend**
+
+![image.png](ReadmeSrc/image%201.png)
+
+Displays the names of the lines at the top of the screen. Users can define the number of lines, their colors, names, and thickness.
+
+**Pin (Channel)**
+
+Displays user-defined pin names on the left side of the screen.
+
+![image.png](ReadmeSrc/image%202.png)
+
+**Cycles**
+
+Based on the time width defined by the user for each Cycle.
+
+![image.png](ReadmeSrc/image%203.png)
+
+**Time Bar**
+
+Located at the bottom of the screen, it displays Cycle time, mouse position time, and Timing Cursor time to help users identify specific time points.
+
+![image.png](ReadmeSrc/image%204.png)
+
+**Voltage Bar**
+
+Located on the left side of the screen, between the pin names and the waveform plot, 
+it displays the voltage range being observed as well as annotations for the voltage value at the mouse cursor position.
+
+![image.png](ReadmeSrc/image%205.png)
+
+**Cursor**
+
+Add Timing Cursor, which can be repositioned by dragging with the mouse.
+
+![image.png](ReadmeSrc/image%206.png)
+
+**Cursor Information**
+
+- **Mouse Cursor**
+Located at the very bottom of the screen, it displays the pin name currently pointed to by the mouse, Offset, Index, the voltage values of each line, and the corresponding time point.
+    
+    ![image.png](ReadmeSrc/image%207.png)
+    
+- **Timing Cursor**
+Located in the top-right corner of the screen, it displays the time difference between Timing Cursors.
+    
+    ![image.png](ReadmeSrc/image%208.png)
+    
+
+**Waveform Plot**
+
+Located in the center of the screen, displaying the voltage values of each pin at discontinuous but evenly spaced time intervals.
+
+![image.png](ReadmeSrc/image%209.png)
+
+---
+
+### **APIs** [Under Construction]
+
+**Line**
+
+**Mouse Cursor**
+
+**Timing Cursor**
+
+**Jump Offset**
+
+**Zoom In/Out**
+
+Export Picture
+
+---
+
 ### **Future Plans**
 
 To improve the Demo functionality showcase, the Demo does not yet fully demonstrate all features.
 
+- [x]  Improve the GUI Layout documentation
+- [ ]  Improve the APIs documentation
 - [ ]  Add user-defined Channel quantity
 - [ ]  Add user-defined Cycle quantity
 - [ ]  Add user-defined number of points per Cycle

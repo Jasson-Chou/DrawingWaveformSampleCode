@@ -40,8 +40,10 @@ namespace WaveformViewDemo
             var cycleProperties = new List<CycleProperties>(CycleCount);
             var lineProperties = new List<WaveformLineProperties>();
             
-            lineProperties.Add(new WaveformLineProperties("Line0") {Thickness = 1.0d, LineColor = Colors.Blue, Show = true });
-            lineProperties.Add(new WaveformLineProperties("Line1") { Thickness = 2.0d, LineColor = Colors.Red, Show = true });
+            lineProperties.Add(new WaveformLineProperties("L0") {Thickness = 1.0d, LineColor = Colors.Blue, Show = true });
+            lineProperties.Add(new WaveformLineProperties("L1") { Thickness = 2.0d, LineColor = Colors.Red, Show = true });
+            lineProperties.Add(new WaveformLineProperties("L2") { Thickness = 0.5d, LineColor = Colors.Green, Show = true });
+            lineProperties.Add(new WaveformLineProperties("L3") { Thickness = 0.5d, LineColor = Colors.Orange, Show = true });
 
 
             for (int cycleIndex = 0; cycleIndex < CycleCount; cycleIndex++)
@@ -89,6 +91,7 @@ namespace WaveformViewDemo
 
             wcInstance.SpacingProperties.TimingResolution = 0.001; // 1 ms
             wcInstance.SpacingProperties.TimingUnit = SpacingProperties.ETimeUnit.Auto;
+            
 
             wcInstance.SpacingProperties.TimingMeasurement.CursorName1 = "X0";
             wcInstance.SpacingProperties.TimingMeasurement.CursorName2 = "X1";
@@ -106,6 +109,10 @@ namespace WaveformViewDemo
         private const int MaxPointSize = 100;
         private const int MinPointSize = 16;
 
-
+        private void AddTimCursor_Click(object sender, RoutedEventArgs e)
+        {
+            var wcInstance = ((App)App.Current).WCInstance;
+            wcInstance.AddTimingCursor();
+        }
     }
 }

@@ -14,6 +14,7 @@
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Orientation="Horizontal">
             <Button x:Name="GenBtn" Content="Gen" Click="GenBtn_Click"/>
+            <Button x:Name="AddTimCursor" Content="Add Time Cursor" Click="AddTimCursor_Click"/>
         </StackPanel>
         <waveformView:WaveformViewer x:Name="waveformViewer" Grid.Row="1"/>
     </Grid>

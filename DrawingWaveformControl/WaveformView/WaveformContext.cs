@@ -312,7 +312,7 @@ namespace WaveformView
                 wLengendPoint.Y = halfLengendHeight - wText.Height / 2.0d;
                 dc.DrawText(wText, wLengendPoint);
                 dc.DrawLine(wPen, wLengendP1, wLengendP2);
-                wLengendPoint.Offset(wLengendP2.X + 5.0d, 0.0d);
+                wLengendPoint.Offset(wLengendP2.X - wLengendPoint.X + 5.0d, 0.0d);
             }
 
             var PinBarVerticalLineX = SpacingProperties.WaveformLeftLineX - SpacingProperties.VBW;
@@ -1361,8 +1361,10 @@ namespace WaveformView
             var leftLineX = SpacingProperties.WaveformLeftLineX;
             var rightLineX = SpacingProperties.WaveformRightLineX;
 
-            if (point.HasValue && !(ShowingPinProperties is null) &&
-                point.Value.X > leftLineX && point.Value.X < rightLineX && point.Value.Y > topLineY && point.Value.Y < bottomLineY)
+            var waveformAreaRect = new Rect(new Point(leftLineX, topLineY), new Point(rightLineX, bottomLineY));
+            var isInnerWaveformArea = point.HasValue && waveformAreaRect.Contains(point.Value);
+
+            if (isInnerWaveformArea)
             {
                 var currPoint = point.Value;
                 //pin name, cycle offset, timing, voltage
@@ -2438,14 +2440,32 @@ namespace WaveformView
             return -1;
         }
 
-        private static FormattedText GetDrawingFormattedText(string text, Brush color, double Size)
+        private FormattedText GetDrawingFormattedText(string text, Brush color, double Size)
         {
+            double pixelsPerDip = 1.0d;
+            try
+            {
+                if (waveformImage != null)
+                {
+                    pixelsPerDip = VisualTreeHelper.GetDpi(this.waveformImage).PixelsPerDip;
+                }
+                else if (Application.Current?.MainWindow != null)
+                {
+                    pixelsPerDip = VisualTreeHelper.GetDpi(Application.Current.MainWindow).PixelsPerDip;
+                }
+            }
+            catch
+            {
+                pixelsPerDip = 1.0d;
+            }
+
             var formatText = new FormattedText(text,
                 CultureInfo.GetCultureInfo("en-us"),
                 FlowDirection.LeftToRight,
                 new Typeface("Verdana"),
                 Size,
-                color);
+                color,
+                pixelsPerDip);
             return formatText;
         }
 
