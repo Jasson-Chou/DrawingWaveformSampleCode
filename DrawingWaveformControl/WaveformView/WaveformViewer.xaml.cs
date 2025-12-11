@@ -124,7 +124,7 @@ namespace WaveformView
                         {
                             var vector = LastMousePoint - MousePoint;
                             ScrollVerticalOffset(vector.Y);
-                            ScrollHornizontalOffset(vector.X);
+                            ScrollHorizontalOffset(vector.X);
 
                             Instance.Render(WaveformContext.ERenderDirect.All);
                         }
@@ -232,7 +232,7 @@ namespace WaveformView
             Instance.Render(WaveformContext.ERenderDirect.Vertical);
         }
 
-        private void ScrollHornizontalValue(double newValue)
+        private void ScrollHorizontalValue(double newValue)
         {
             Instance.ScrollHornizontalValue = newValue < 0 ? 0 : newValue;
             Instance.Render(WaveformContext.ERenderDirect.Hornizontal);
@@ -246,7 +246,7 @@ namespace WaveformView
             verticalScroll.Value = temp;
         }
 
-        private void ScrollHornizontalOffset(double newValue)
+        private void ScrollHorizontalOffset(double newValue)
         {
             var temp = Instance.ScrollHornizontalValue + newValue;
             if (temp < 0 || temp > Instance.MaxScrollHornizontal) return;
@@ -263,7 +263,7 @@ namespace WaveformView
         private void HornizontalScroll_Scroll(object sender, System.Windows.Controls.Primitives.ScrollEventArgs e)
         {
             if (Instance is null) return;
-            ScrollHornizontalValue(e.NewValue);
+            ScrollHorizontalValue(e.NewValue);
         }
 
         private void PixelXSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
