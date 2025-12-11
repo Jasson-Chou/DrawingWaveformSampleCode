@@ -82,8 +82,13 @@ namespace WaveformView
         {
             get
             {
+                // 建立或在大小改變時重建，同時更新 CurrMW/CurrMH，避免每次呼叫都重建
                 if (CurrBitmapTmp is null || CurrMW != SpacingProperties.MW || CurrMH != SpacingProperties.MH)
-                    CurrBitmapTmp = new RenderTargetBitmap((int)SpacingProperties.MW, (int)SpacingProperties.MH, 96.0d, 96.0d, PixelFormats.Pbgra32);
+                {
+                    CurrMW = SpacingProperties.MW;
+                    CurrMH = SpacingProperties.MH;
+                    CurrBitmapTmp = new RenderTargetBitmap(Math.Max(1, (int)CurrMW), Math.Max(1, (int)CurrMH), 96.0d, 96.0d, PixelFormats.Pbgra32);
+                }
                 return CurrBitmapTmp;
             }
         }
@@ -166,68 +171,63 @@ namespace WaveformView
             else
             {
                 SpacingProperties.Update();
-                if (direct == ERenderDirect.All)
+                switch(direct)
                 {
-                    InitPinProperties();
-                    InitCycleProperties();
-                    InitScrollValues();
-                    InitPinBarWidth();
-                    InitVoltageBarWidth();
-                    InitDynamicSpacingProperties();
-                    RenderD();
-                    RenderC();
-                    RenderB();
-                    RenderA();
-                    MouseMove(null);
-                    RenderT();
-                }
-                else if (direct == ERenderDirect.Hornizontal)
-                {
-                    RenderD();
-                    RenderB();
-                    RenderT();
-                }
-                else if (direct == ERenderDirect.Vertical)
-                {
-                    InitPinBarWidth();
-                    InitVoltageBarWidth();
-                    InitDynamicSpacingProperties();
-                    RenderD();
-                    RenderC();
-                    RenderB();
-                    RenderA();
-                    RenderT();
-                }
-                else if (direct == ERenderDirect.ZoomInOut)
-                {
-                    InitCycleProperties();
-                    InitScrollValues();
-                    InitPinBarWidth();
-                    InitVoltageBarWidth();
-                    InitDynamicSpacingProperties();
-                    RenderD();
-                    RenderC();
-                    RenderB();
-                    RenderA();
-                    RenderT();
-                }
-                else if (direct == ERenderDirect.ShowPins)
-                {
-                    InitPinProperties();
-                    InitPinBarWidth();
-                    InitVoltageBarWidth();
-                    InitDynamicSpacingProperties();
-                    RenderD();
-                    RenderC();
-                    RenderT();
-                }
-                else if (direct == ERenderDirect.MouseMoving)
-                {
-                    RenderT();
-                }
-                else
-                {
-                    throw new Exception($"Undefine {direct.ToString()}");
+                    case ERenderDirect.All:
+                        InitPinProperties();
+                        InitCycleProperties();
+                        InitScrollValues();
+                        InitPinBarWidth();
+                        InitVoltageBarWidth();
+                        InitDynamicSpacingProperties();
+                        RenderD();
+                        RenderC();
+                        RenderB();
+                        RenderA();
+                        MouseMove(null);
+                        RenderT();
+                        break;
+                    case ERenderDirect.Hornizontal:
+                        RenderD();
+                        RenderB();
+                        RenderT();
+                        break;
+                    case ERenderDirect.Vertical:
+                        InitPinBarWidth();
+                        InitVoltageBarWidth();
+                        InitDynamicSpacingProperties();
+                        RenderD();
+                        RenderC();
+                        RenderB();
+                        RenderA();
+                        RenderT();
+                        break;
+                    case ERenderDirect.ZoomInOut:
+                        InitCycleProperties();
+                        InitScrollValues();
+                        InitPinBarWidth();
+                        InitVoltageBarWidth();
+                        InitDynamicSpacingProperties();
+                        RenderD();
+                        RenderC();
+                        RenderB();
+                        RenderA();
+                        RenderT();
+                        break;
+                    case ERenderDirect.ShowPins:
+                        InitPinProperties();
+                        InitPinBarWidth();
+                        InitVoltageBarWidth();
+                        InitDynamicSpacingProperties();
+                        RenderD();
+                        RenderC();
+                        RenderT();
+                        break;
+                    case ERenderDirect.MouseMoving:
+                        RenderT();
+                        break;
+                    default:
+                        throw new Exception($"Undefine {direct.ToString()}");
                 }
             }
 
